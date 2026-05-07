@@ -36,6 +36,7 @@ jobs:
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
         run: npm run build
 
       - name: Configure Pages

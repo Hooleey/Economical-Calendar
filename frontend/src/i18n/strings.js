@@ -5,7 +5,7 @@ export const STRINGS = {
   ru: {
     "brand.title": "Экономический календарь",
     "nav.events": "События",
-    "nav.calendar": "Календарь",
+    "nav.news": "Новости",
     "lang.label": "Язык",
     "theme.dark": "Тёмная тема",
     "theme.light": "Светлая тема",
@@ -38,8 +38,31 @@ export const STRINGS = {
     "events.col.previous": "Предыдущее",
     "events.empty": "Нет событий за выбранный фильтр.",
     "events.dash": "—",
-    "calendar.title": "Календарь",
-    "calendar.lede": "События сгруппированы по дате публикации.",
+    "news.title": "Экономические новости",
+    "news.lede":
+      "Сводка формируется парсингом страниц деловых и экономических СМИ. Для смешанных источников действует фильтр по экономическим ключевым темам, чтобы отсекать обычные новости.",
+    "news.source": "Источник",
+    "news.allSources": "Все источники",
+    "news.refresh": "Обновить ленты",
+    "news.refreshing": "Обновление…",
+    "news.loading": "Загрузка новостей…",
+    "news.empty": "Нет новостей по текущим условиям.",
+    "news.openReader": "Читать в приложении",
+    "news.readerTitle": "Чтение новости",
+    "news.readerLoading": "Загружаем полный текст статьи из источника…",
+    "news.readerFallback": "Краткое содержание новости недоступно. Откройте оригинал после чтения.",
+    "news.readerWait": "Переход в источник будет доступен через {seconds} сек.",
+    "news.readerReady": "Можно перейти в источник.",
+    "news.readOriginal": "Читать в источнике →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "Не удалось связаться с API (/health). Запустите backend на порту 8000 (или проверьте прокси Vite при npm run dev).",
+    "news.backendOutdated":
+      "Подключена старая версия backend: в ответе /health нет возможности «новости» (features.news). Нужна версия API из текущего проекта.",
+    "news.restartBackend":
+      "Остановите старый uvicorn (Ctrl+C). В каталоге backend выполните:\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\nЗатем заново откройте фронт http://localhost:5173/ и проверьте /health в браузере: должно быть «features»: { «news»: true }.",
+    "news.hintNotFound":
+      "Если видите «Not Found» при запросе /news: почти всегда на порту 8000 всё ещё старый процесс. Полностью перезапустите uvicorn из папки backend текущего проекта.",
     "footer.home": "Главная",
     "footer.note": "Автообновление выполняется каждые 60 секунд.",
     "importance.low": "низкая",
@@ -91,7 +114,7 @@ export const STRINGS = {
   en: {
     "brand.title": "Macro calendar",
     "nav.events": "Events",
-    "nav.calendar": "Calendar",
+    "nav.news": "News",
     "lang.label": "Language",
     "theme.dark": "Dark theme",
     "theme.light": "Light theme",
@@ -124,8 +147,31 @@ export const STRINGS = {
     "events.col.previous": "Previous",
     "events.empty": "No events for current filters.",
     "events.dash": "—",
-    "calendar.title": "Calendar",
-    "calendar.lede": "Events grouped by release date.",
+    "news.title": "Economic news",
+    "news.lede":
+      "Headlines are collected by parsing business and economic website pages. Mixed sources are filtered by economy and markets keywords to exclude general news.",
+    "news.source": "Source",
+    "news.allSources": "All sources",
+    "news.refresh": "Refresh feeds",
+    "news.refreshing": "Refreshing…",
+    "news.loading": "Loading news…",
+    "news.empty": "No news matches the current filter.",
+    "news.openReader": "Read inside app",
+    "news.readerTitle": "Read news",
+    "news.readerLoading": "Loading full article text from source…",
+    "news.readerFallback": "Summary is unavailable. Open the original source after reading.",
+    "news.readerWait": "Source link unlocks in {seconds}s.",
+    "news.readerReady": "You can open the source now.",
+    "news.readOriginal": "Read original →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "Could not reach the API (/health). Start the backend on port 8000 (or verify the Vite dev proxy while using npm run dev).",
+    "news.backendOutdated":
+      "The running backend is too old: /health does not report features.news. Use the backend from this project version.",
+    "news.restartBackend":
+      "Stop the old uvicorn (Ctrl+C). In the backend folder run:\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\nThen reload http://localhost:5173/ and open /health — it should include \"features\": {\"news\": true}.",
+    "news.hintNotFound":
+      "If you see Not Found on /news, another process on port 8000 is usually serving an old app. Restart uvicorn from this project’s backend folder.",
     "footer.home": "Home",
     "footer.note": "Auto-refresh runs every 60 seconds.",
     "importance.low": "low",
@@ -177,7 +223,7 @@ export const STRINGS = {
   zh: {
     "brand.title": "宏观日历",
     "nav.events": "事件",
-    "nav.calendar": "日历",
+    "nav.news": "要闻",
     "lang.label": "语言",
     "theme.dark": "深色主题",
     "theme.light": "浅色主题",
@@ -210,8 +256,24 @@ export const STRINGS = {
     "events.col.previous": "前值",
     "events.empty": "当前筛选无事件。",
     "events.dash": "—",
-    "calendar.title": "日历",
-    "calendar.lede": "按发布日期分组。",
+    "news.title": "经济要闻",
+    "news.lede": "通过抓取商业与经济媒体网页生成摘要；综合来源会按经济与市场关键词过滤，尽量排除普通新闻。",
+    "news.source": "来源",
+    "news.allSources": "全部来源",
+    "news.refresh": "刷新源",
+    "news.refreshing": "刷新中…",
+    "news.loading": "加载新闻…",
+    "news.empty": "当前筛选暂无新闻。",
+    "news.readOriginal": "阅读原文 →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "无法访问 API（/health）。请在 8000 端口启动后端（使用 npm run dev 时确认 Vite 代理）。",
+    "news.backendOutdated":
+      "后端版本过旧：/health 未返回 features.news。请使用本仓库当前版本的后端。",
+    "news.restartBackend":
+      "停止旧 uvicorn（Ctrl+C），在 backend 目录执行：\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\n然后刷新 http://localhost:5173/，并检查 /health 是否包含 \"features\": {\"news\": true}。",
+    "news.hintNotFound":
+      "若 /news 返回 Not Found，多半是 8000 端口仍跑着旧服务。请在本项目 backend 目录完整重启 uvicorn。",
     "footer.home": "首页",
     "footer.note": "每 60 秒自动更新。",
     "importance.low": "低",
@@ -263,7 +325,7 @@ export const STRINGS = {
   es: {
     "brand.title": "Calendario macro",
     "nav.events": "Eventos",
-    "nav.calendar": "Calendario",
+    "nav.news": "Noticias",
     "lang.label": "Idioma",
     "theme.dark": "Tema oscuro",
     "theme.light": "Tema claro",
@@ -296,8 +358,25 @@ export const STRINGS = {
     "events.col.previous": "Previo",
     "events.empty": "No hay eventos para el filtro actual.",
     "events.dash": "—",
-    "calendar.title": "Calendario",
-    "calendar.lede": "Eventos agrupados por fecha de publicación.",
+    "news.title": "Noticias económicas",
+    "news.lede":
+      "Los titulares se obtienen parseando páginas web de medios económicos y financieros. Las fuentes mixtas pasan por filtros de economía y mercados para excluir noticias generales.",
+    "news.source": "Fuente",
+    "news.allSources": "Todas las fuentes",
+    "news.refresh": "Actualizar fuentes",
+    "news.refreshing": "Actualizando…",
+    "news.loading": "Cargando noticias…",
+    "news.empty": "No hay noticias con el filtro actual.",
+    "news.readOriginal": "Leer en la fuente →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "No se pudo contactar al API (/health). Inicie el backend en el puerto 8000 (o verifique el proxy de Vite con npm run dev).",
+    "news.backendOutdated":
+      "El backend en ejecución es antiguo: /health no incluye features.news. Use el backend de esta versión del proyecto.",
+    "news.restartBackend":
+      "Detenga uvicorn (Ctrl+C). En la carpeta backend ejecute:\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\nLuego recargue http://localhost:5173/ y compruebe /health: debe incluir \"features\": {\"news\": true}.",
+    "news.hintNotFound":
+      "Si /news devuelve Not Found, suele haber otro proceso antiguo en el puerto 8000. Reinicie uvicorn desde la carpeta backend de este proyecto.",
     "footer.home": "Inicio",
     "footer.note": "Actualización automática cada 60 segundos.",
     "importance.low": "baja",

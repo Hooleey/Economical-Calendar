@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { BrowserRouter, HashRouter, Link, NavLink, Route, Routes } from "react-router-dom";
-import { fetchEventDescription, fetchEvents, refreshEvents } from "./api";
+import { BrowserRouter, HashRouter, Link, NavLink, Navigate, Route, Routes } from "react-router-dom";
+import {
+  fetchBackendHealth,
+  fetchEventDescription,
+  fetchEvents,
+  fetchNewsContent,
+  fetchNews,
+  refreshEvents,
+  refreshNews,
+} from "./api";
 import { useI18n } from "./i18n/I18nContext";
 import "./styles.css";
 
@@ -466,74 +474,291 @@ function EventsPage() {
   );
 }
 
-function CalendarPage() {
+function formatNewsTimestamp(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return String(iso);
+  }
+}
+
+function NewsPage() {
   const { t } = useI18n();
-  const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [articles, setArticles] = useState([]);
+  const [sourceOptions, setSourceOptions] = useState([]);
+  const [source, setSource] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [readingArticle, setReadingArticle] = useState(null);
+  const [unlockIn, setUnlockIn] = useState(0);
+  const [readerContent, setReaderContent] = useState("");
+  const [readerSummary, setReaderSummary] = useState("");
+  const [readerLoading, setReaderLoading] = useState(false);
+  const [readerError, setReaderError] = useState("");
+
+  async function populateSourceCatalog() {
+    const h = await fetchBackendHealth();
+    if (!h?.features?.news) {
+      setSourceOptions([]);
+      return;
+    }
+    try {
+      const data = await fetchNews({}, { autoRefresh: false, limit: 220 });
+      const map = new Map();
+      for (const a of data || []) {
+        if (a.source_key) map.set(a.source_key, a.source_label || a.source_key);
+      }
+      setSourceOptions([...map.entries()].sort((a, b) => a[1].localeCompare(b[1])));
+    } catch {
+      setSourceOptions([]);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const h = await fetchBackendHealth();
+        if (cancelled) return;
+        if (!h?.features?.news) {
+          setSourceOptions([]);
+          return;
+        }
+        const data = await fetchNews({}, { autoRefresh: false, limit: 220 });
+        if (cancelled) return;
+        const map = new Map();
+        for (const a of data || []) {
+          if (a.source_key) map.set(a.source_key, a.source_label || a.source_key);
+        }
+        setSourceOptions([...map.entries()].sort((a, b) => a[1].localeCompare(b[1])));
+      } catch {
+        if (!cancelled) setSourceOptions([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
-    const load = async (refreshFirst = false) => {
+    const load = async (opts = {}) => {
+      setLoading(true);
+      setError("");
       try {
-        if (refreshFirst) {
-          try {
-            await refreshEvents();
-          } catch {
-            // ignore
-          }
+        const h = await fetchBackendHealth();
+        if (!active) return;
+        if (!h) {
+          setArticles([]);
+          setError(t("news.healthFailed"));
+          return;
         }
-        const data = await fetchEvents({}, { autoRefresh: false });
-        if (active) setEvents(data);
+        if (h.features?.news !== true) {
+          setArticles([]);
+          setError(t("news.backendOutdated"));
+          return;
+        }
+        const data = await fetchNews(
+          { source: source || undefined },
+          { autoRefresh: opts.autoRefresh !== false, limit: 150 }
+        );
+        if (active) setArticles(Array.isArray(data) ? data : []);
       } catch (e) {
-        console.error(e);
+        if (active) setError(e.message || String(e));
+      } finally {
+        if (active) setLoading(false);
       }
     };
-    load(false);
-    const id = setInterval(() => load(true), 60000);
+    load({ autoRefresh: true });
+    const id = setInterval(() => load({ autoRefresh: true }), 120000);
     return () => {
       active = false;
       clearInterval(id);
     };
-  }, []);
+  }, [source, t]);
 
-  const grouped = useMemo(() => {
-    return events.reduce((acc, item) => {
-      if (!acc[item.date]) acc[item.date] = [];
-      acc[item.date].push(item);
-      return acc;
-    }, {});
-  }, [events]);
+  const onRefreshNow = async () => {
+    setRefreshing(true);
+    setError("");
+    try {
+      const h = await fetchBackendHealth();
+      if (!h) {
+        setError(t("news.healthFailed"));
+        return;
+      }
+      if (h.features?.news !== true) {
+        setError(t("news.backendOutdated"));
+        return;
+      }
+      await refreshNews();
+      await populateSourceCatalog();
+      const list = await fetchNews(
+        { source: source || undefined },
+        { autoRefresh: false, limit: 150 }
+      );
+      setArticles(Array.isArray(list) ? list : []);
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const showStaleHint =
+    typeof error === "string" &&
+    (error.includes("Not Found") || /not\s*found/i.test(error) || error === t("news.backendOutdated"));
+
+  useEffect(() => {
+    if (!readingArticle || unlockIn <= 0) return undefined;
+    const id = setInterval(() => {
+      setUnlockIn((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [readingArticle, unlockIn]);
+
+  const openReader = (article) => {
+    setReadingArticle(article);
+    setUnlockIn(6);
+    setReaderContent("");
+    setReaderSummary("");
+    setReaderError("");
+    setReaderLoading(true);
+    fetchNewsContent(article.id)
+      .then((payload) => {
+        setReaderContent((payload?.content || "").toString().trim());
+        setReaderSummary((payload?.summary || "").toString().trim());
+      })
+      .catch((e) => {
+        setReaderError(e.message || String(e));
+      })
+      .finally(() => setReaderLoading(false));
+  };
+
+  const closeReader = () => {
+    setReadingArticle(null);
+    setUnlockIn(0);
+  };
 
   return (
     <div className="page">
       <header className="page-head">
-        <h1>{t("calendar.title")}</h1>
-        <p className="lede">{t("calendar.lede")}</p>
+        <h1>{t("news.title")}</h1>
+        <p className="lede">{t("news.lede")}</p>
       </header>
-      <div className="calendar">
-        {Object.keys(grouped)
-          .sort()
-          .map((d) => (
-            <section key={d} className="calendar-day panel">
-              <h2 className="calendar-date mono">{d}</h2>
-              <ul className="calendar-list">
-                {grouped[d]
-                  .slice()
-                  .sort((a, b) => (a.event_time || "").localeCompare(b.event_time || ""))
-                  .map((e) => (
-                    <li key={e.id} className="calendar-item event-row" onClick={() => setSelectedEvent(e)}>
-                      <span className="mono muted">{e.event_time || t("events.dash")}</span>
-                      <span className={importanceClass(e.importance)}>{t(`importance.${e.importance}`)}</span>
-                      <span>
-                        {countryLabel({ t, country: e.country, currency: e.currency })} — {e.title}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          ))}
+
+      <div className="filters-card news-toolbar">
+        <div className="filters-grid news-toolbar-grid">
+          <label className="field">
+            <span>{t("news.source")}</span>
+            <select value={source} onChange={(e) => setSource(e.target.value)}>
+              <option value="">{t("news.allSources")}</option>
+              {sourceOptions.map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="field news-toolbar-actions">
+            <span className="field-spacer" />
+            <button
+              type="button"
+              className="btn"
+              disabled={refreshing}
+              onClick={onRefreshNow}
+            >
+              {refreshing ? t("news.refreshing") : t("news.refresh")}
+            </button>
+          </div>
+        </div>
       </div>
-      <EventDescriptionModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+
+      {loading && !articles.length && <p className="muted">{t("news.loading")}</p>}
+      {error && (
+        <div className="error news-error">
+          <p className="news-error-text">{error}</p>
+          {error === t("news.backendOutdated") ? (
+            <p className="muted news-error-hint">{t("news.restartBackend")}</p>
+          ) : null}
+          {showStaleHint && error !== t("news.backendOutdated") ? (
+            <p className="muted news-error-hint">{t("news.hintNotFound")}</p>
+          ) : null}
+        </div>
+      )}
+
+      <div className="news-grid">
+        {!loading && !articles.length && !error ? (
+          <p className="muted">{t("news.empty")}</p>
+        ) : (
+          articles.map((a) => (
+            <article key={a.id} className="news-card">
+              <div className="news-card-meta">
+                <span className="pill news-source">{a.source_label || a.source_key}</span>
+                <time className="mono muted news-time" dateTime={a.published_at || undefined}>
+                  {formatNewsTimestamp(a.published_at) || t("news.noDate")}
+                </time>
+              </div>
+              <h2 className="news-card-title">
+                <button type="button" className="news-title-btn" onClick={() => openReader(a)}>
+                  {a.title}
+                </button>
+              </h2>
+              {a.summary ? <p className="news-card-summary muted">{a.summary}</p> : null}
+              <div className="news-card-foot">
+                <button type="button" className="news-read-btn" onClick={() => openReader(a)}>
+                  {t("news.openReader")}
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+      {readingArticle ? (
+        <div className="modal-backdrop news-reader-backdrop" role="dialog" aria-modal="true" onClick={closeReader}>
+          <div className="modal-card news-reader-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>{t("news.readerTitle")}</h3>
+              <button type="button" className="modal-close" onClick={closeReader} aria-label={t("modal.close")}>
+                ×
+              </button>
+            </div>
+            <p className="modal-title">{readingArticle.title}</p>
+            <p className="muted news-reader-source">{readingArticle.source_label || readingArticle.source_key}</p>
+            {readerLoading ? <p className="modal-body">{t("news.readerLoading")}</p> : null}
+            {readerError ? <p className="modal-body">{readerError}</p> : null}
+            {!readerLoading && !readerError ? (
+              <div className="modal-body news-reader-content">
+                {readerSummary ? <p className="news-reader-summary">{readerSummary}</p> : null}
+                {(readerContent || readingArticle.summary || t("news.readerFallback"))
+                  .split(/\n{2,}/)
+                  .filter(Boolean)
+                  .map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+              </div>
+            ) : null}
+            <div className="news-reader-actions">
+              <span className="muted">
+                {unlockIn > 0 ? t("news.readerWait", { seconds: String(unlockIn) }) : t("news.readerReady")}
+              </span>
+              <a
+                className={`news-read ${unlockIn > 0 ? "news-read-disabled" : ""}`}
+                href={unlockIn > 0 ? undefined : readingArticle.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-disabled={unlockIn > 0}
+                onClick={(e) => {
+                  if (unlockIn > 0) e.preventDefault();
+                }}
+              >
+                {t("news.readOriginal")}
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -585,8 +810,8 @@ function Layout() {
             <NavLink end className="nav-link" to="/">
               {t("nav.events")}
             </NavLink>
-            <NavLink className="nav-link" to="/calendar">
-              {t("nav.calendar")}
+            <NavLink className="nav-link" to="/news">
+              {t("nav.news")}
             </NavLink>
           </nav>
           <label className="lang-select">
@@ -614,7 +839,8 @@ function Layout() {
       <main className="main">
         <Routes>
           <Route path="/" element={<EventsPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/calendar" element={<Navigate to="/news" replace />} />
         </Routes>
       </main>
       <footer className="footer muted">
