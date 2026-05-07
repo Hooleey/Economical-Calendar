@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
@@ -5,12 +6,30 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DATABASE_PATH = BACKEND_DIR / "events.db"
-DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
+_RAW_DB_URL = (os.getenv("DATABASE_URL") or "").strip()
+
+
+def _normalize_postgres_url(url: str) -> str:
+    # Heroku/Render historically use postgres://; SQLAlchemy prefers explicit driver.
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgresql+psycopg2://"):
+        return url
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
+if _RAW_DB_URL:
+    DATABASE_URL = _normalize_postgres_url(_RAW_DB_URL)
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+else:
+    DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

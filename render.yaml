@@ -11,6 +11,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.11"
+      - key: DATABASE_URL
+        # Neon / PostgreSQL connection string (paste full URL from Neon console)
+        sync: false
       - key: FRONTEND_ORIGIN_REGEX
         # Example: ^https://hooleey\.github\.io$
         sync: false

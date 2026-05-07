@@ -12,8 +12,13 @@ This project is split deploy:
 3. Wait for deploy completion, then copy backend URL, for example:
    - `https://economic-calendarr-api.onrender.com`
 4. In Render service env vars set:
-   - `FRONTEND_ORIGIN_REGEX=^https://hooleey\.github\.io$`
-   - Optional: `ALFAFOREX_SYNC_TTL_SECONDS`, `NEWS_SYNC_TTL_SECONDS`.
+   - `DATABASE_URL` — полная строка из Neon (Connection string), например  
+     `postgresql://neondb_owner:ПАРОЛЬ@ep-....neon.tech/neondb?sslmode=require`  
+     (скопируйте из консоли Neon, вкладка Connection string).
+   - `FRONTEND_ORIGIN_REGEX=^https://hooleey\.github\.io$` (подставьте свой домен Pages)
+   - Опционально: `ALFAFOREX_SYNC_TTL_SECONDS`, `NEWS_SYNC_TTL_SECONDS`.
+
+Если `DATABASE_URL` не задан, backend использует локальный **SQLite** (`events.db`).
 
 ## 2) Frontend on GitHub Pages
 
