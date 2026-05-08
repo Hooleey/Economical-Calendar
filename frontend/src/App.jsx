@@ -208,6 +208,22 @@ function eventDescriptionText(t, event) {
   return t("modal.descriptionFallback");
 }
 
+function eventSourceLabel(t, source) {
+  const s = (source || "manual").toLowerCase();
+  const key = `modal.source.${s}`;
+  const label = t(key);
+  if (label !== key) return label;
+  return s;
+}
+
+function splitDescriptionParagraphs(text) {
+  const raw = (text || "").toString().trim();
+  if (!raw) return [];
+  const byBlank = raw.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+  if (byBlank.length > 1) return byBlank;
+  return raw.split(/\n/).map((x) => x.trim()).filter(Boolean);
+}
+
 function EventDescriptionModal({ event, onClose }) {
   const { t, lang } = useI18n();
   const [resolvedDescription, setResolvedDescription] = useState(eventDescriptionText(t, event));
@@ -236,19 +252,70 @@ function EventDescriptionModal({ event, onClose }) {
 
   if (!event) return null;
 
+  const paragraphs = splitDescriptionParagraphs(resolvedDescription);
+  const dayIso = calendarDayIso(event.date) || event.date;
+  const impLevel = ["low", "medium", "high"].includes(event.importance) ? event.importance : "low";
+  const timeLabel = event.event_time?.trim() || t("events.dash");
+  const currLabel = event.currency?.trim() || "";
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop event-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="modal-card event-description-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <h3>{t("modal.title")}</h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label={t("modal.close")}>
             ×
           </button>
         </div>
-        <p className="modal-title">
-          {countryLabel({ t, country: event.country, currency: event.currency })} — {event.title}
-        </p>
-        <p className="modal-body">{resolvedDescription}</p>
+        <div className="event-modal-body-scroll">
+          <div className="event-modal-summary-bar">
+            <span className="mono event-modal-summary-time">{timeLabel}</span>
+            {currLabel ? <span className="mono event-modal-summary-currency">{currLabel}</span> : null}
+            <span className={importanceClass(impLevel)}>{t(`importance.${impLevel}`)}</span>
+            <span className="event-modal-summary-title">{event.title}</span>
+            <p className="event-modal-summary-country">
+              {countryLabel({ t, country: event.country, currency: event.currency })}
+              {" · "}
+              {t("events.col.date")}: {dayIso || t("events.dash")}
+              {event.remaining_time ? ` · ${t("events.col.remaining")}: ${event.remaining_time}` : ""}
+            </p>
+            <div className="event-modal-summary-nums" aria-label={t("modal.metricsTitle")}>
+              <span className="event-modal-summary-num">
+                <label>{t("events.col.actual")}</label>
+                <b className="mono">{compactMetricValue(event.actual) || t("events.dash")}</b>
+              </span>
+              <span className="event-modal-summary-num">
+                <label>{t("events.col.forecast")}</label>
+                <b className="mono">{compactMetricValue(event.forecast) || t("events.dash")}</b>
+              </span>
+              <span className="event-modal-summary-num">
+                <label>{t("events.col.previous")}</label>
+                <b className="mono">{compactMetricValue(event.previous) || t("events.dash")}</b>
+              </span>
+            </div>
+          </div>
+          <div className="event-modal-meta-inline">
+            <strong>{t("modal.sourceLabel")}:</strong> {eventSourceLabel(t, event.source)}
+            {event.regulator ? (
+              <>
+                {" · "}
+                <strong>{t("modal.regulatorLabel")}:</strong> {event.regulator}
+              </>
+            ) : null}
+          </div>
+          <div className="event-modal-desc-block">
+            <h4 className="event-modal-desc-block-title">{t("modal.sectionDescription")}</h4>
+            {paragraphs.length ? (
+              paragraphs.map((para, idx) => (
+                <p key={idx} className="event-modal-description-p">
+                  {para}
+                </p>
+              ))
+            ) : (
+              <p className="event-modal-description-muted">{t("modal.descriptionFallback")}</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

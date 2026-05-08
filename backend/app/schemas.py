@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -34,6 +34,18 @@ class EventRead(EventBase):
     id: int
     source: str = "manual"
     external_id: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class NewsRead(BaseModel):
+    id: int
+    title: str
+    link: str
+    summary: Optional[str] = None
+    source_key: str
+    source_label: str
+    published_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

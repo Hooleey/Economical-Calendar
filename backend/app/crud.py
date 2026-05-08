@@ -1,6 +1,8 @@
 from typing import Optional, Tuple
 
-from sqlalchemy import select
+from datetime import date, datetime
+
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -23,6 +25,16 @@ def get_events(
         stmt = stmt.where(models.Event.importance == importance)
 
     return db.execute(stmt).scalars().all()
+
+
+def count_events_on_date_by_source(db: Session, day: date, source: str) -> int:
+    """How many rows exist for calendar day ``day`` from a given ingest source."""
+    n = db.scalar(
+        select(func.count())
+        .select_from(models.Event)
+        .where(models.Event.date == day, models.Event.source == source)
+    )
+    return int(n or 0)
 
 
 def create_event(db: Session, event_in: schemas.EventCreate):
@@ -178,3 +190,71 @@ def backfill_external_descriptions(db: Session, descriptions: dict[str, str]) ->
     if changed:
         db.commit()
     return changed
+
+
+def get_news_articles(db: Session, source_key: Optional[str] = None, limit: int = 120):
+    sort_ts = func.coalesce(models.NewsArticle.published_at, models.NewsArticle.fetched_at)
+    stmt = select(models.NewsArticle).order_by(sort_ts.desc(), models.NewsArticle.id.desc())
+    if source_key:
+        stmt = stmt.where(models.NewsArticle.source_key == source_key)
+    stmt = stmt.limit(limit)
+    return db.execute(stmt).scalars().all()
+
+
+def get_news_article_by_id(db: Session, article_id: int):
+    return db.get(models.NewsArticle, article_id)
+
+
+def upsert_news_article(
+    db: Session,
+    *,
+    link: str,
+    title: str,
+    summary: Optional[str],
+    source_key: str,
+    source_label: str,
+    published_at: Optional[datetime],
+):
+    existing = db.scalar(select(models.NewsArticle).where(models.NewsArticle.link == link))
+    if existing is None:
+        row = models.NewsArticle(
+            link=link,
+            title=title,
+            summary=summary,
+            source_key=source_key,
+            source_label=source_label,
+            published_at=published_at,
+        )
+        db.add(row)
+        db.commit()
+        return "inserted"
+    changed = False
+    for attr, value in (
+        ("title", title),
+        ("summary", summary),
+        ("source_key", source_key),
+        ("source_label", source_label),
+        ("published_at", published_at),
+    ):
+        if getattr(existing, attr) != value:
+            setattr(existing, attr, value)
+            changed = True
+    if changed:
+        db.add(existing)
+        db.commit()
+        return "updated"
+    return "skipped"
+
+
+def prune_old_news(db: Session, keep: int = 250):
+    sort_ts = func.coalesce(models.NewsArticle.published_at, models.NewsArticle.fetched_at)
+    subq = (
+        select(models.NewsArticle.id).order_by(sort_ts.desc(), models.NewsArticle.id.desc()).limit(keep)
+    )
+    # SQLite-friendly: delete rows whose id NOT IN (...)
+    ids = db.execute(subq).scalars().all()
+    if not ids:
+        return 0
+    res = db.execute(delete(models.NewsArticle).where(~models.NewsArticle.id.in_(ids)))
+    db.commit()
+    return int(res.rowcount or 0)

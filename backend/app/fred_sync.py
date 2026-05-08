@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import date, datetime, timedelta
 from typing import Any, Optional
@@ -6,6 +7,8 @@ import httpx
 from sqlalchemy.orm import Session
 
 from . import crud
+
+logger = logging.getLogger(__name__)
 
 FRED_BASE = "https://api.stlouisfed.org/fred"
 
@@ -42,6 +45,11 @@ MEDIUM_KEYWORDS = (
 
 def _fred_api_key() -> str:
     return (os.getenv("FRED_API_KEY") or "").strip()
+
+
+def fred_api_configured() -> bool:
+    """Used by /health — do not log or return the key."""
+    return bool(_fred_api_key())
 
 
 def _guess_importance(title: str) -> str:
@@ -122,7 +130,14 @@ def _fetch_release_dates(
         )
         r.raise_for_status()
         data = r.json()
-        batch = data.get("release_dates") or data.get("releases") or []
+        batch = (
+            data.get("release_dates")
+            or data.get("releases")
+            or data.get("releaseDates")
+            or []
+        )
+        if not isinstance(batch, list):
+            batch = []
         if not batch:
             break
         rows.extend(batch)
@@ -166,8 +181,11 @@ def sync_fred_calendar(db: Session, start_date: date, end_date: date) -> dict[st
     inserted = 0
     skipped = 0
 
+    # One-day pulls use release_name rows from /releases/dates; skip huge /releases crawl (timeouts).
+    narrow_window = start_date.toordinal() == end_date.toordinal()
+
     with httpx.Client(timeout=60.0) as client:
-        names = _fetch_releases_index(client, api_key)
+        names: dict[int, str] = {} if narrow_window else _fetch_releases_index(client, api_key)
         rows = _fetch_release_dates(client, api_key, start_s, end_s)
 
     for row in rows:
@@ -199,13 +217,16 @@ def sync_fred_calendar(db: Session, start_date: date, end_date: date) -> dict[st
         else:
             skipped += 1
 
-    return {
+    stats = {
         "fetched": len(rows),
         "inserted": inserted,
         "skipped": skipped,
         "start_date": start_s,
         "end_date": end_s,
+        "narrow_window": narrow_window,
     }
+    logger.info("fred sync %s", stats)
+    return stats
 
 
 def default_sync_window() -> tuple[date, date]:

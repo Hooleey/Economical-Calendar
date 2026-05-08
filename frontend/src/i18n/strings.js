@@ -5,7 +5,7 @@ export const STRINGS = {
   ru: {
     "brand.title": "Экономический календарь",
     "nav.events": "События",
-    "nav.calendar": "Календарь",
+    "nav.news": "Новости",
     "lang.label": "Язык",
     "theme.dark": "Тёмная тема",
     "theme.light": "Светлая тема",
@@ -37,9 +37,43 @@ export const STRINGS = {
     "events.col.forecast": "Прогноз",
     "events.col.previous": "Предыдущее",
     "events.empty": "Нет событий за выбранный фильтр.",
+    "events.exactFredNoKey":
+      "Резервные данные FRED недоступны: на сервере не задан FRED_API_KEY (файл backend/.env локально или переменные окружения на Render). Получите бесплатный ключ на сайте FRED и перезапустите backend.",
+    "events.exactFredNoReleases":
+      "Ключ FRED виден серверу, но список пуст: для этой календарной даты у FRED могло не быть запланированных публикаций, либо внешний API временно недоступен — посмотрите лог бэкенда.",
+    "events.exactFredUnknown":
+      "Для режима «Точная дата», если событий от AlfaForex нет, бэкенд вызывает FRED (/events с on_date). Обновите backend до версии из проекта и откройте /health: должно быть fred_api_configured: true. Иначе задайте FRED_API_KEY.",
+    "events.githubPagesNoApiBase":
+      "Сайт на GitHub Pages не знает адрес API: при сборке не был задан VITE_API_BASE. В репозитории: Settings → Secrets and variables → Actions → Variables → добавьте VITE_API_BASE = https://ваш-сервис.onrender.com (без завершающего /), затем запустите workflow «Deploy frontend to GitHub Pages» заново.",
+    "events.githubPagesLocalhostApi":
+      "На GitHub Pages в сборку попал адрес localhost/127.0.0.1 — с HTTPS-страницы до него нельзя достучаться. Укажите в VITE_API_BASE публичный HTTPS URL Render (переменная репозитория) и пересоберите фронт.",
     "events.dash": "—",
-    "calendar.title": "Календарь",
-    "calendar.lede": "События сгруппированы по дате публикации.",
+    "news.title": "Экономические новости",
+    "news.lede":
+      "Сводка формируется парсингом страниц деловых и экономических СМИ. Для смешанных источников действует фильтр по экономическим ключевым темам, чтобы отсекать обычные новости.",
+    "news.source": "Источник",
+    "news.onlyInterfax": "Только Интерфакс",
+    "news.allSources": "Все источники",
+    "news.refresh": "Обновить ленты",
+    "news.refreshing": "Обновление…",
+    "news.loading": "Загрузка новостей…",
+    "news.empty": "Нет новостей по текущим условиям.",
+    "news.openReader": "Читать в приложении",
+    "news.readerTitle": "Чтение новости",
+    "news.readerLoading": "Загружаем полный текст статьи из источника…",
+    "news.readerFallback": "Краткое содержание новости недоступно. Откройте оригинал после чтения.",
+    "news.readerWait": "Переход в источник будет доступен через {seconds} сек.",
+    "news.readerReady": "Можно перейти в источник.",
+    "news.readOriginal": "Читать в источнике →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "Не удалось связаться с API (/health). Запустите backend на порту 8000 (или проверьте прокси Vite при npm run dev).",
+    "news.backendOutdated":
+      "Подключена старая версия backend: в ответе /health нет возможности «новости» (features.news). Нужна версия API из текущего проекта.",
+    "news.restartBackend":
+      "Остановите старый uvicorn (Ctrl+C). В каталоге backend выполните:\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\nЗатем заново откройте фронт http://localhost:5173/ и проверьте /health в браузере: должно быть «features»: { «news»: true }.",
+    "news.hintNotFound":
+      "Если видите «Not Found» при запросе /news: почти всегда на порту 8000 всё ещё старый процесс. Полностью перезапустите uvicorn из папки backend текущего проекта.",
     "footer.home": "Главная",
     "footer.note": "Автообновление выполняется каждые 60 секунд.",
     "importance.low": "низкая",
@@ -48,6 +82,14 @@ export const STRINGS = {
     "modal.title": "Описание",
     "modal.close": "Закрыть",
     "modal.descriptionFallback": "Описание события недоступно.",
+    "modal.sectionDetails": "Сводка",
+    "modal.sectionDescription": "Описание",
+    "modal.metricsTitle": "Показатели",
+    "modal.sourceLabel": "Источник",
+    "modal.regulatorLabel": "Публикация / регулятор",
+    "modal.source.alfaforex": "AlfaForex (экономический календарь)",
+    "modal.source.fred": "FRED (график релизов)",
+    "modal.source.manual": "Вручную / демо",
     "country.US": "США",
     "country.GB": "Великобритания",
     "country.DE": "Германия",
@@ -91,7 +133,7 @@ export const STRINGS = {
   en: {
     "brand.title": "Macro calendar",
     "nav.events": "Events",
-    "nav.calendar": "Calendar",
+    "nav.news": "News",
     "lang.label": "Language",
     "theme.dark": "Dark theme",
     "theme.light": "Light theme",
@@ -123,9 +165,43 @@ export const STRINGS = {
     "events.col.forecast": "Forecast",
     "events.col.previous": "Previous",
     "events.empty": "No events for current filters.",
+    "events.exactFredNoKey":
+      "FRED fallback is unavailable: FRED_API_KEY is not set on the server (backend/.env locally or Render env vars). Add a free FRED API key and restart the backend.",
+    "events.exactFredNoReleases":
+      "FRED key is configured, but the table is empty: FRED may have no releases on that calendar day or the upstream API failed—check backend logs.",
+    "events.exactFredUnknown":
+      "For Exact date, when AlfaForex has no rows that day the backend tries FRED (GET /events with on_date). Deploy the current API and open /health—expect fred_api_configured: true. Otherwise set FRED_API_KEY.",
+    "events.githubPagesNoApiBase":
+      "GitHub Pages build had no backend URL (VITE_API_BASE missing). In the repo: Settings → Secrets and variables → Actions → Variables → add VITE_API_BASE = https://your-service.onrender.com (no trailing slash), then re-run the “Deploy frontend to GitHub Pages” workflow.",
+    "events.githubPagesLocalhostApi":
+      "The shipped bundle points to localhost/127.0.0.1, which an HTTPS GitHub Pages site cannot call. Set VITE_API_BASE to your public Render HTTPS URL and rebuild the frontend.",
     "events.dash": "—",
-    "calendar.title": "Calendar",
-    "calendar.lede": "Events grouped by release date.",
+    "news.title": "Economic news",
+    "news.lede":
+      "Headlines are collected by parsing business and economic website pages. Mixed sources are filtered by economy and markets keywords to exclude general news.",
+    "news.source": "Source",
+    "news.onlyInterfax": "Interfax only",
+    "news.allSources": "All sources",
+    "news.refresh": "Refresh feeds",
+    "news.refreshing": "Refreshing…",
+    "news.loading": "Loading news…",
+    "news.empty": "No news matches the current filter.",
+    "news.openReader": "Read inside app",
+    "news.readerTitle": "Read news",
+    "news.readerLoading": "Loading full article text from source…",
+    "news.readerFallback": "Summary is unavailable. Open the original source after reading.",
+    "news.readerWait": "Source link unlocks in {seconds}s.",
+    "news.readerReady": "You can open the source now.",
+    "news.readOriginal": "Read original →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "Could not reach the API (/health). Start the backend on port 8000 (or verify the Vite dev proxy while using npm run dev).",
+    "news.backendOutdated":
+      "The running backend is too old: /health does not report features.news. Use the backend from this project version.",
+    "news.restartBackend":
+      "Stop the old uvicorn (Ctrl+C). In the backend folder run:\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\nThen reload http://localhost:5173/ and open /health — it should include \"features\": {\"news\": true}.",
+    "news.hintNotFound":
+      "If you see Not Found on /news, another process on port 8000 is usually serving an old app. Restart uvicorn from this project’s backend folder.",
     "footer.home": "Home",
     "footer.note": "Auto-refresh runs every 60 seconds.",
     "importance.low": "low",
@@ -134,6 +210,14 @@ export const STRINGS = {
     "modal.title": "Description",
     "modal.close": "Close",
     "modal.descriptionFallback": "No description available.",
+    "modal.sectionDetails": "Summary",
+    "modal.sectionDescription": "Description",
+    "modal.metricsTitle": "Figures",
+    "modal.sourceLabel": "Data source",
+    "modal.regulatorLabel": "Publisher / regulator",
+    "modal.source.alfaforex": "AlfaForex (economic calendar)",
+    "modal.source.fred": "FRED (release schedule)",
+    "modal.source.manual": "Manual / demo",
     "country.US": "United States",
     "country.GB": "United Kingdom",
     "country.DE": "Germany",
@@ -177,7 +261,7 @@ export const STRINGS = {
   zh: {
     "brand.title": "宏观日历",
     "nav.events": "事件",
-    "nav.calendar": "日历",
+    "nav.news": "要闻",
     "lang.label": "语言",
     "theme.dark": "深色主题",
     "theme.light": "浅色主题",
@@ -209,9 +293,36 @@ export const STRINGS = {
     "events.col.forecast": "预测值",
     "events.col.previous": "前值",
     "events.empty": "当前筛选无事件。",
+    "events.exactFredNoKey":
+      "无法使用 FRED 备用数据：服务器未设置 FRED_API_KEY（本地 backend/.env 或 Render 环境变量）。请在 FRED 申请免费密钥并重启后端。",
+    "events.exactFredNoReleases":
+      "FRED 密钥已配置但仍无数据：所选日期可能没有排期发布，或上游 API 故障—请查看后端日志。",
+    "events.exactFredUnknown":
+      "在「指定日期」模式下，若当日无 AlfaForex 数据，后端会调用 FRED（/events?on_date）。请部署当前 API 并访问 /health（期望 fred_api_configured: true），或设置 FRED_API_KEY。",
+    "events.githubPagesNoApiBase":
+      "GitHub Pages 构建未设置 VITE_API_BASE。请在仓库 Settings → Actions → Variables 添加 VITE_API_BASE = https://你的服务.onrender.com（无尾部 /），然后重新运行 Pages 部署工作流。",
+    "events.githubPagesLocalhostApi":
+      "打包的 API 地址为 localhost/127.0.0.1，HTTPS 的 GitHub Pages 无法访问。请将 VITE_API_BASE 设为 Render 的公网 HTTPS 地址并重新构建前端。",
     "events.dash": "—",
-    "calendar.title": "日历",
-    "calendar.lede": "按发布日期分组。",
+    "news.title": "经济要闻",
+    "news.lede": "通过抓取商业与经济媒体网页生成摘要；综合来源会按经济与市场关键词过滤，尽量排除普通新闻。",
+    "news.source": "来源",
+    "news.onlyInterfax": "仅国际文传电讯社",
+    "news.allSources": "全部来源",
+    "news.refresh": "刷新源",
+    "news.refreshing": "刷新中…",
+    "news.loading": "加载新闻…",
+    "news.empty": "当前筛选暂无新闻。",
+    "news.readOriginal": "阅读原文 →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "无法访问 API（/health）。请在 8000 端口启动后端（使用 npm run dev 时确认 Vite 代理）。",
+    "news.backendOutdated":
+      "后端版本过旧：/health 未返回 features.news。请使用本仓库当前版本的后端。",
+    "news.restartBackend":
+      "停止旧 uvicorn（Ctrl+C），在 backend 目录执行：\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\n然后刷新 http://localhost:5173/，并检查 /health 是否包含 \"features\": {\"news\": true}。",
+    "news.hintNotFound":
+      "若 /news 返回 Not Found，多半是 8000 端口仍跑着旧服务。请在本项目 backend 目录完整重启 uvicorn。",
     "footer.home": "首页",
     "footer.note": "每 60 秒自动更新。",
     "importance.low": "低",
@@ -220,6 +331,14 @@ export const STRINGS = {
     "modal.title": "描述",
     "modal.close": "关闭",
     "modal.descriptionFallback": "暂无描述。",
+    "modal.sectionDetails": "摘要",
+    "modal.sectionDescription": "说明",
+    "modal.metricsTitle": "数据",
+    "modal.sourceLabel": "数据来源",
+    "modal.regulatorLabel": "发布机构",
+    "modal.source.alfaforex": "AlfaForex（经济日历）",
+    "modal.source.fred": "FRED（发布日程）",
+    "modal.source.manual": "手动/演示",
     "country.US": "美国",
     "country.GB": "英国",
     "country.DE": "德国",
@@ -263,7 +382,7 @@ export const STRINGS = {
   es: {
     "brand.title": "Calendario macro",
     "nav.events": "Eventos",
-    "nav.calendar": "Calendario",
+    "nav.news": "Noticias",
     "lang.label": "Idioma",
     "theme.dark": "Tema oscuro",
     "theme.light": "Tema claro",
@@ -295,9 +414,37 @@ export const STRINGS = {
     "events.col.forecast": "Pronóstico",
     "events.col.previous": "Previo",
     "events.empty": "No hay eventos para el filtro actual.",
+    "events.exactFredNoKey":
+      "Copia de seguridad FRED no disponible: falta FRED_API_KEY en el servidor (backend/.env o variables en Render). Obtenga una clave gratuita en FRED y reinicie el backend.",
+    "events.exactFredNoReleases":
+      "La clave FRED está configurada pero la lista está vacía: ese día puede no haber publicaciones en el calendario FRED o falló la API externa—revise los logs del backend.",
+    "events.exactFredUnknown":
+      "Con fecha exacta, si no hay AlfaForex ese día el backend intenta FRED (GET /events con on_date). Despliegue la API actual y abra /health (fred_api_configured: true); en otro caso configure FRED_API_KEY.",
+    "events.githubPagesNoApiBase":
+      "Falta VITE_API_BASE en el build de GitHub Pages. En el repo: Settings → Actions → Variables, añada VITE_API_BASE = https://tu-servicio.onrender.com (sin barra final) y vuelva a ejecutar el workflow de despliegue.",
+    "events.githubPagesLocalhostApi":
+      "El bundle apunta a localhost/127.0.0.1; una página HTTPS en github.io no puede llamarlo. Use la URL HTTPS pública de Render en VITE_API_BASE y reconstruya el frontend.",
     "events.dash": "—",
-    "calendar.title": "Calendario",
-    "calendar.lede": "Eventos agrupados por fecha de publicación.",
+    "news.title": "Noticias económicas",
+    "news.lede":
+      "Los titulares se obtienen parseando páginas web de medios económicos y financieros. Las fuentes mixtas pasan por filtros de economía y mercados para excluir noticias generales.",
+    "news.source": "Fuente",
+    "news.onlyInterfax": "Solo Interfax",
+    "news.allSources": "Todas las fuentes",
+    "news.refresh": "Actualizar fuentes",
+    "news.refreshing": "Actualizando…",
+    "news.loading": "Cargando noticias…",
+    "news.empty": "No hay noticias con el filtro actual.",
+    "news.readOriginal": "Leer en la fuente →",
+    "news.noDate": "—",
+    "news.healthFailed":
+      "No se pudo contactar al API (/health). Inicie el backend en el puerto 8000 (o verifique el proxy de Vite con npm run dev).",
+    "news.backendOutdated":
+      "El backend en ejecución es antiguo: /health no incluye features.news. Use el backend de esta versión del proyecto.",
+    "news.restartBackend":
+      "Detenga uvicorn (Ctrl+C). En la carpeta backend ejecute:\npython -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000\nLuego recargue http://localhost:5173/ y compruebe /health: debe incluir \"features\": {\"news\": true}.",
+    "news.hintNotFound":
+      "Si /news devuelve Not Found, suele haber otro proceso antiguo en el puerto 8000. Reinicie uvicorn desde la carpeta backend de este proyecto.",
     "footer.home": "Inicio",
     "footer.note": "Actualización automática cada 60 segundos.",
     "importance.low": "baja",
@@ -306,6 +453,14 @@ export const STRINGS = {
     "modal.title": "Descripción",
     "modal.close": "Cerrar",
     "modal.descriptionFallback": "No hay descripción disponible.",
+    "modal.sectionDetails": "Resumen",
+    "modal.sectionDescription": "Descripción",
+    "modal.metricsTitle": "Cifras",
+    "modal.sourceLabel": "Fuente",
+    "modal.regulatorLabel": "Emisor / regulador",
+    "modal.source.alfaforex": "AlfaForex (calendario económico)",
+    "modal.source.fred": "FRED (calendario de publicaciones)",
+    "modal.source.manual": "Manual / demo",
     "country.US": "Estados Unidos",
     "country.GB": "Reino Unido",
     "country.DE": "Alemania",

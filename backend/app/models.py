@@ -33,3 +33,16 @@ class Event(Base):
     external_id: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class NewsArticle(Base):
+    __tablename__ = "news_articles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    link: Mapped[str] = mapped_column(String(2000), nullable=False, unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    source_key: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    source_label: Mapped[str] = mapped_column(String(160), nullable=False)
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

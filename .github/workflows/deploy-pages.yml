@@ -32,10 +32,12 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # VITE_API_BASE must be Actions variable with your HTTPS API root (Render), e.g. https://economic-api.onrender.com
       - name: Build
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
         run: npm run build
 
       - name: Configure Pages
