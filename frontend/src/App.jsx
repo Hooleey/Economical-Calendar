@@ -562,7 +562,7 @@ function NewsPage() {
         }
         const data = await fetchNews(
           { source: source || undefined },
-          { autoRefresh: opts.autoRefresh !== false, limit: 150 }
+          { autoRefresh: false, limit: 150 }
         );
         if (active) setArticles(Array.isArray(data) ? data : []);
       } catch (e) {
@@ -571,8 +571,8 @@ function NewsPage() {
         if (active) setLoading(false);
       }
     };
-    load({ autoRefresh: true });
-    const id = setInterval(() => load({ autoRefresh: true }), 120000);
+    load({ autoRefresh: false });
+    const id = setInterval(() => load({ autoRefresh: false }), 120000);
     return () => {
       active = false;
       clearInterval(id);
