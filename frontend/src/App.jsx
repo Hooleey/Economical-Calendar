@@ -223,6 +223,15 @@ function eventSourceLabel(t, source) {
   return s;
 }
 
+function regulatorLabelText(t, regulator) {
+  const raw = (regulator || "").toString().trim();
+  if (!raw) return "";
+  if (/alfa\s*-?\s*forex|альфа\s*-?\s*форекс/i.test(raw)) {
+    return t("modal.regulatorGeneric");
+  }
+  return raw;
+}
+
 function splitDescriptionParagraphs(text) {
   const raw = (text || "").toString().trim();
   if (!raw) return [];
@@ -264,6 +273,7 @@ function EventDescriptionModal({ event, onClose }) {
   const impLevel = ["low", "medium", "high"].includes(event.importance) ? event.importance : "low";
   const timeLabel = event.event_time?.trim() || t("events.dash");
   const currLabel = event.currency?.trim() || "";
+  const regulatorLabel = regulatorLabelText(t, event.regulator);
 
   return (
     <div className="modal-backdrop event-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
@@ -303,10 +313,10 @@ function EventDescriptionModal({ event, onClose }) {
           </div>
           <div className="event-modal-meta-inline">
             <strong>{t("modal.sourceLabel")}:</strong> {eventSourceLabel(t, event.source)}
-            {event.regulator ? (
+            {regulatorLabel ? (
               <>
                 {" · "}
-                <strong>{t("modal.regulatorLabel")}:</strong> {event.regulator}
+                <strong>{t("modal.regulatorLabel")}:</strong> {regulatorLabel}
               </>
             ) : null}
           </div>

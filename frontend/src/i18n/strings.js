@@ -42,7 +42,7 @@ export const STRINGS = {
     "events.exactFredNoReleases":
       "Ключ FRED виден серверу, но список пуст: для этой календарной даты у FRED могло не быть запланированных публикаций, либо внешний API временно недоступен — посмотрите лог бэкенда.",
     "events.exactFredUnknown":
-      "Для режима «Точная дата», если событий от AlfaForex нет, бэкенд вызывает FRED (/events с on_date). Обновите backend до версии из проекта и откройте /health: должно быть fred_api_configured: true. Иначе задайте FRED_API_KEY.",
+      "Для режима «Точная дата», если по основному календарю событий нет, бэкенд вызывает FRED (/events с on_date). Обновите backend до версии из проекта и откройте /health: должно быть fred_api_configured: true. Иначе задайте FRED_API_KEY.",
     "events.exactNearestShown":
       "За дату {requested} событий нет, показаны ближайшие доступные на {actual} (источник: {source}).",
     "events.githubPagesNoApiBase":
@@ -88,7 +88,8 @@ export const STRINGS = {
     "modal.metricsTitle": "Показатели",
     "modal.sourceLabel": "Источник",
     "modal.regulatorLabel": "Публикация / регулятор",
-    "modal.source.alfaforex": "AlfaForex (экономический календарь)",
+    "modal.regulatorGeneric": "Экономический календарь",
+    "modal.source.alfaforex": "Экономический календарь",
     "modal.source.fred": "FRED (график релизов)",
     "modal.source.manual": "Вручную / демо",
     "country.US": "США",
@@ -171,7 +172,7 @@ export const STRINGS = {
     "events.exactFredNoReleases":
       "FRED key is configured, but the table is empty: FRED may have no releases on that calendar day or the upstream API failed—check backend logs.",
     "events.exactFredUnknown":
-      "For Exact date, when AlfaForex has no rows that day the backend tries FRED (GET /events with on_date). Deploy the current API and open /health—expect fred_api_configured: true. Otherwise set FRED_API_KEY.",
+      "For Exact date, when the primary calendar has no rows that day the backend tries FRED (GET /events with on_date). Deploy the current API and open /health—expect fred_api_configured: true. Otherwise set FRED_API_KEY.",
     "events.exactNearestShown":
       "No events for {requested}; showing nearest available events on {actual} (source: {source}).",
     "events.githubPagesNoApiBase":
@@ -217,7 +218,8 @@ export const STRINGS = {
     "modal.metricsTitle": "Figures",
     "modal.sourceLabel": "Data source",
     "modal.regulatorLabel": "Publisher / regulator",
-    "modal.source.alfaforex": "AlfaForex (economic calendar)",
+    "modal.regulatorGeneric": "Economic calendar",
+    "modal.source.alfaforex": "Economic calendar",
     "modal.source.fred": "FRED (release schedule)",
     "modal.source.manual": "Manual / demo",
     "country.US": "United States",
@@ -300,7 +302,7 @@ export const STRINGS = {
     "events.exactFredNoReleases":
       "FRED 密钥已配置但仍无数据：所选日期可能没有排期发布，或上游 API 故障—请查看后端日志。",
     "events.exactFredUnknown":
-      "在「指定日期」模式下，若当日无 AlfaForex 数据，后端会调用 FRED（/events?on_date）。请部署当前 API 并访问 /health（期望 fred_api_configured: true），或设置 FRED_API_KEY。",
+      "在「指定日期」模式下，若当日主日历无数据，后端会调用 FRED（/events?on_date）。请部署当前 API 并访问 /health（期望 fred_api_configured: true），或设置 FRED_API_KEY。",
     "events.exactNearestShown":
       "所选日期 {requested} 暂无事件，已显示最近可用日期 {actual} 的事件（来源：{source}）。",
     "events.githubPagesNoApiBase":
@@ -340,7 +342,8 @@ export const STRINGS = {
     "modal.metricsTitle": "数据",
     "modal.sourceLabel": "数据来源",
     "modal.regulatorLabel": "发布机构",
-    "modal.source.alfaforex": "AlfaForex（经济日历）",
+    "modal.regulatorGeneric": "经济日历",
+    "modal.source.alfaforex": "经济日历",
     "modal.source.fred": "FRED（发布日程）",
     "modal.source.manual": "手动/演示",
     "country.US": "美国",
@@ -423,7 +426,7 @@ export const STRINGS = {
     "events.exactFredNoReleases":
       "La clave FRED está configurada pero la lista está vacía: ese día puede no haber publicaciones en el calendario FRED o falló la API externa—revise los logs del backend.",
     "events.exactFredUnknown":
-      "Con fecha exacta, si no hay AlfaForex ese día el backend intenta FRED (GET /events con on_date). Despliegue la API actual y abra /health (fred_api_configured: true); en otro caso configure FRED_API_KEY.",
+      "Con fecha exacta, si el calendario principal no tiene filas ese día el backend intenta FRED (GET /events con on_date). Despliegue la API actual y abra /health (fred_api_configured: true); en otro caso configure FRED_API_KEY.",
     "events.exactNearestShown":
       "No hay eventos para {requested}; se muestran los más cercanos disponibles en {actual} (fuente: {source}).",
     "events.githubPagesNoApiBase":
@@ -463,7 +466,8 @@ export const STRINGS = {
     "modal.metricsTitle": "Cifras",
     "modal.sourceLabel": "Fuente",
     "modal.regulatorLabel": "Emisor / regulador",
-    "modal.source.alfaforex": "AlfaForex (calendario económico)",
+    "modal.regulatorGeneric": "Calendario económico",
+    "modal.source.alfaforex": "Calendario económico",
     "modal.source.fred": "FRED (calendario de publicaciones)",
     "modal.source.manual": "Manual / demo",
     "country.US": "Estados Unidos",
