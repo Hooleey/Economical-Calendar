@@ -483,11 +483,35 @@ function formatNewsTimestamp(iso) {
   }
 }
 
+function interleaveBySource(items) {
+  const groups = new Map();
+  for (const item of items || []) {
+    const key = item?.source_key || "unknown";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const keys = [...groups.keys()].sort();
+  const result = [];
+  let progress = true;
+  while (progress) {
+    progress = false;
+    for (const k of keys) {
+      const queue = groups.get(k);
+      if (queue && queue.length) {
+        result.push(queue.shift());
+        progress = true;
+      }
+    }
+  }
+  return result;
+}
+
 function NewsPage() {
   const { t } = useI18n();
   const [articles, setArticles] = useState([]);
   const [sourceOptions, setSourceOptions] = useState([]);
   const [source, setSource] = useState("");
+  const [interfaxOnly, setInterfaxOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -561,10 +585,10 @@ function NewsPage() {
           return;
         }
         const data = await fetchNews(
-          { source: source || undefined },
+          { source: interfaxOnly ? "interfax_business" : source || undefined },
           { autoRefresh: false, limit: 150 }
         );
-        if (active) setArticles(Array.isArray(data) ? data : []);
+        if (active) setArticles(interleaveBySource(Array.isArray(data) ? data : []));
       } catch (e) {
         if (active) setError(e.message || String(e));
       } finally {
@@ -577,7 +601,7 @@ function NewsPage() {
       active = false;
       clearInterval(id);
     };
-  }, [source, t]);
+  }, [source, interfaxOnly, t]);
 
   const onRefreshNow = async () => {
     setRefreshing(true);
@@ -595,10 +619,10 @@ function NewsPage() {
       await refreshNews();
       await populateSourceCatalog();
       const list = await fetchNews(
-        { source: source || undefined },
+        { source: interfaxOnly ? "interfax_business" : source || undefined },
         { autoRefresh: false, limit: 150 }
       );
-      setArticles(Array.isArray(list) ? list : []);
+      setArticles(interleaveBySource(Array.isArray(list) ? list : []));
     } catch (e) {
       setError(e.message || String(e));
     } finally {
@@ -663,6 +687,13 @@ function NewsPage() {
           </label>
           <div className="field news-toolbar-actions">
             <span className="field-spacer" />
+            <button
+              type="button"
+              className={`chip ${interfaxOnly ? "chip-active" : ""}`}
+              onClick={() => setInterfaxOnly((v) => !v)}
+            >
+              {t("news.onlyInterfax")}
+            </button>
             <button
               type="button"
               className="btn"

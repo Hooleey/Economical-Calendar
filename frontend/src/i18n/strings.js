@@ -42,6 +42,7 @@ export const STRINGS = {
     "news.lede":
       "Сводка формируется парсингом страниц деловых и экономических СМИ. Для смешанных источников действует фильтр по экономическим ключевым темам, чтобы отсекать обычные новости.",
     "news.source": "Источник",
+    "news.onlyInterfax": "Только Интерфакс",
     "news.allSources": "Все источники",
     "news.refresh": "Обновить ленты",
     "news.refreshing": "Обновление…",
@@ -151,6 +152,7 @@ export const STRINGS = {
     "news.lede":
       "Headlines are collected by parsing business and economic website pages. Mixed sources are filtered by economy and markets keywords to exclude general news.",
     "news.source": "Source",
+    "news.onlyInterfax": "Interfax only",
     "news.allSources": "All sources",
     "news.refresh": "Refresh feeds",
     "news.refreshing": "Refreshing…",
@@ -259,6 +261,7 @@ export const STRINGS = {
     "news.title": "经济要闻",
     "news.lede": "通过抓取商业与经济媒体网页生成摘要；综合来源会按经济与市场关键词过滤，尽量排除普通新闻。",
     "news.source": "来源",
+    "news.onlyInterfax": "仅国际文传电讯社",
     "news.allSources": "全部来源",
     "news.refresh": "刷新源",
     "news.refreshing": "刷新中…",
@@ -362,6 +365,7 @@ export const STRINGS = {
     "news.lede":
       "Los titulares se obtienen parseando páginas web de medios económicos y financieros. Las fuentes mixtas pasan por filtros de economía y mercados para excluir noticias generales.",
     "news.source": "Fuente",
+    "news.onlyInterfax": "Solo Interfax",
     "news.allSources": "Todas las fuentes",
     "news.refresh": "Actualizar fuentes",
     "news.refreshing": "Actualizando…",
