@@ -194,6 +194,22 @@ function nextAvailableDateIso(events, afterIso) {
   return dates.find((x) => x > afterDay) || "";
 }
 
+function derivedRemainingTime(event) {
+  const day = calendarDayIso(event?.date);
+  const timeText = (event?.event_time || "").toString().trim();
+  if (!day || !/^\d{2}:\d{2}$/.test(timeText)) return "";
+  const target = new Date(`${day}T${timeText}:00`);
+  if (Number.isNaN(target.getTime())) return "";
+  const diffMs = target.getTime() - Date.now();
+  if (diffMs <= 0) return "";
+  const totalMin = Math.floor(diffMs / 60000);
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  if (d > 0) return `D-${d} ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function eventsFetchErrorMessage(e, translate) {
   const code = parseApiConfigError(e);
   return code ? translate(`events.${code}`) : e?.message || String(e);
@@ -256,6 +272,7 @@ function EventDescriptionModal({ event, onClose }) {
   const impLevel = ["low", "medium", "high"].includes(event.importance) ? event.importance : "low";
   const timeLabel = event.event_time?.trim() || t("events.dash");
   const currLabel = event.currency?.trim() || "";
+  const remainingLabel = (event.remaining_time || "").toString().trim() || derivedRemainingTime(event);
 
   return (
     <div className="modal-backdrop event-modal-backdrop" role="dialog" aria-modal="true" onClick={onClose}>
@@ -276,7 +293,7 @@ function EventDescriptionModal({ event, onClose }) {
               {countryLabel({ t, country: event.country, currency: event.currency })}
               {" · "}
               {t("events.col.date")}: {dayIso || t("events.dash")}
-              {event.remaining_time ? ` · ${t("events.col.remaining")}: ${event.remaining_time}` : ""}
+              {remainingLabel ? ` · ${t("events.col.remaining")}: ${remainingLabel}` : ""}
             </p>
             <div className="event-modal-summary-nums" aria-label={t("modal.metricsTitle")}>
               <span className="event-modal-summary-num">
@@ -609,10 +626,13 @@ function EventsPage() {
                   </tr>
                 ) : null}
                 {visibleRows.map((e) => (
+                (() => {
+                  const remainingLabel = (e.remaining_time || "").toString().trim() || derivedRemainingTime(e);
+                  return (
                 <tr key={e.id} className="event-row" onClick={() => setSelectedEvent(e)}>
                   <td className="mono">{calendarDayIso(e.date) || e.date}</td>
                   <td className="mono">{e.event_time || t("events.dash")}</td>
-                  <td className="mono">{e.remaining_time || t("events.dash")}</td>
+                  <td className="mono">{remainingLabel || t("events.dash")}</td>
                   <td className="mono">{e.currency || t("events.dash")}</td>
                   <td>
                     <span className="country-cell">
@@ -627,6 +647,8 @@ function EventsPage() {
                   <td className="mono">{compactMetricValue(e.forecast) || t("events.dash")}</td>
                   <td className="mono">{compactMetricValue(e.previous) || t("events.dash")}</td>
                 </tr>
+                  );
+                })()
                 ))}
               </>
             )}
