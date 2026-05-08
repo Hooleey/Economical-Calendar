@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, HashRouter, Link, NavLink, Navigate, Route, Routes } from "react-router-dom";
 import {
+  apiConfigurationBlockedReason,
   fetchBackendHealth,
   fetchEventDescription,
   fetchEvents,
   fetchNewsContent,
   fetchNews,
+  parseApiConfigError,
   refreshEvents,
   refreshNews,
 } from "./api";
@@ -161,16 +163,33 @@ function localIsoDate(d = new Date()) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/** API may return Postgres/JSON datetime strings (YYYY-MM-DDTHH:MM:SS...). */
+function calendarDayIso(raw) {
+  if (raw == null || raw === "") return "";
+  const s = String(raw).trim();
+  const mIso = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (mIso) return mIso[1];
+  const t = Date.parse(s);
+  if (!Number.isNaN(t)) return localIsoDate(new Date(t));
+  return "";
+}
+
 function localMidnightFromIso(isoDate) {
-  // isoDate: YYYY-MM-DD
-  const [y, m, d] = (isoDate || "").split("-").map((x) => Number(x));
+  const day = calendarDayIso(isoDate);
+  const [y, m, d] = day.split("-").map((x) => Number(x));
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
 function nextAvailableDateIso(events, afterIso) {
-  const dates = [...new Set((events || []).map((e) => e?.date).filter(Boolean))].sort();
-  return dates.find((x) => x > afterIso) || "";
+  const dates = [...new Set((events || []).map((e) => calendarDayIso(e?.date)).filter(Boolean))].sort();
+  const afterDay = calendarDayIso(afterIso) || afterIso;
+  return dates.find((x) => x > afterDay) || "";
+}
+
+function eventsFetchErrorMessage(e, translate) {
+  const code = parseApiConfigError(e);
+  return code ? translate(`events.${code}`) : e?.message || String(e);
 }
 
 function compactMetricValue(value) {
@@ -247,6 +266,12 @@ function EventsPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [backendHealth, setBackendHealth] = useState(null);
+  const eventsFetchGen = useRef(0);
+
+  useEffect(() => {
+    fetchBackendHealth().then(setBackendHealth).catch(() => setBackendHealth(null));
+  }, []);
 
   const countries = useMemo(
     () =>
@@ -258,6 +283,15 @@ function EventsPage() {
   useEffect(() => {
     let isActive = true;
     const load = async (refreshFirst = false) => {
+      const gen = ++eventsFetchGen.current;
+      const cfgEarly = apiConfigurationBlockedReason();
+      if (cfgEarly) {
+        if (isActive) {
+          setError(t(`events.${cfgEarly}`));
+          setLoading(false);
+        }
+        return;
+      }
       setLoading(true);
       setError("");
       try {
@@ -277,11 +311,13 @@ function EventsPage() {
             // keep empty
           }
         }
-        if (isActive) setEvents(data);
+        if (!isActive || gen !== eventsFetchGen.current) return;
+        setEvents(data);
       } catch (e) {
-        if (isActive) setError(e.message);
+        if (!isActive || gen !== eventsFetchGen.current) return;
+        setError(eventsFetchErrorMessage(e, t));
       } finally {
-        if (isActive) setLoading(false);
+        if (isActive && gen === eventsFetchGen.current) setLoading(false);
       }
     };
     load(false);
@@ -291,6 +327,38 @@ function EventsPage() {
       clearInterval(id);
     };
   }, []);
+
+  // При «Точная дата»: если у AlfaForex нет строк на этот день, бэкенд подгружает FRED за этот день.
+  useEffect(() => {
+    if (filters.datePreset !== "exact" || !filters.dateExact) return undefined;
+    let active = true;
+    const gen = ++eventsFetchGen.current;
+    (async () => {
+      const cfgEarly = apiConfigurationBlockedReason();
+      if (cfgEarly) {
+        if (active) {
+          setError(t(`events.${cfgEarly}`));
+          setLoading(false);
+        }
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const data = await fetchEvents({}, { autoRefresh: true, onDate: filters.dateExact });
+        if (!active || gen !== eventsFetchGen.current) return;
+        setEvents(data);
+      } catch (e) {
+        if (!active || gen !== eventsFetchGen.current) return;
+        setError(eventsFetchErrorMessage(e, t));
+      } finally {
+        if (active && gen === eventsFetchGen.current) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [filters.datePreset, filters.dateExact]);
 
   const filtered = useMemo(
     () =>
@@ -303,12 +371,13 @@ function EventsPage() {
         const tomorrowIso = localIsoDate(tomorrow);
         const tomorrowTargetIso =
           filters.datePreset === "tomorrow"
-            ? events.some((x) => x.date === tomorrowIso)
+            ? events.some((x) => calendarDayIso(x.date) === tomorrowIso)
               ? tomorrowIso
               : nextAvailableDateIso(events, todayIso)
             : tomorrowIso;
-        if (filters.datePreset === "today" && e.date !== todayIso) return false;
-        if (filters.datePreset === "tomorrow" && e.date !== tomorrowTargetIso) return false;
+        const evDay = calendarDayIso(e.date);
+        if (filters.datePreset === "today" && evDay !== todayIso) return false;
+        if (filters.datePreset === "tomorrow" && evDay !== tomorrowTargetIso) return false;
         if (filters.datePreset === "week") {
           const d = localMidnightFromIso(e.date);
           const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
@@ -316,12 +385,19 @@ function EventsPage() {
           const deltaDays = Math.floor((d.getTime() - t0.getTime()) / 86400000);
           if (deltaDays < 0 || deltaDays > 6) return false;
         }
-        if (filters.datePreset === "exact" && filters.dateExact && e.date !== filters.dateExact) return false;
+        if (filters.datePreset === "exact" && filters.dateExact && evDay !== filters.dateExact) return false;
         if (filters.importance && e.importance !== filters.importance) return false;
         return true;
       }),
     [events, filters]
   );
+
+  const hasEventsOnExactDate = useMemo(() => {
+    if (filters.datePreset !== "exact" || !filters.dateExact) return false;
+    return events.some((e) => calendarDayIso(e.date) === filters.dateExact);
+  }, [events, filters.datePreset, filters.dateExact]);
+
+  const ghApiBlock = apiConfigurationBlockedReason();
 
   return (
     <div className="page">
@@ -439,15 +515,30 @@ function EventsPage() {
           </thead>
           <tbody>
             {filtered.length === 0 && !loading ? (
-              <tr>
-                <td colSpan={10} className="muted center">
-                  {t("events.empty")}
-                </td>
-              </tr>
+              <>
+                <tr>
+                  <td colSpan={10} className="muted center">
+                    {t("events.empty")}
+                  </td>
+                </tr>
+                {filters.datePreset === "exact" && filters.dateExact && !hasEventsOnExactDate ? (
+                  <tr>
+                    <td colSpan={10} className="muted events-exact-hint">
+                      {ghApiBlock
+                        ? t(`events.${ghApiBlock}`)
+                        : backendHealth?.fred_api_configured === false
+                          ? t("events.exactFredNoKey")
+                          : backendHealth?.fred_api_configured === true
+                            ? t("events.exactFredNoReleases")
+                            : t("events.exactFredUnknown")}
+                    </td>
+                  </tr>
+                ) : null}
+              </>
             ) : (
               filtered.map((e) => (
                 <tr key={e.id} className="event-row" onClick={() => setSelectedEvent(e)}>
-                  <td className="mono">{e.date}</td>
+                  <td className="mono">{calendarDayIso(e.date) || e.date}</td>
                   <td className="mono">{e.event_time || t("events.dash")}</td>
                   <td className="mono">{e.remaining_time || t("events.dash")}</td>
                   <td className="mono">{e.currency || t("events.dash")}</td>
@@ -524,6 +615,10 @@ function NewsPage() {
 
   async function populateSourceCatalog() {
     const h = await fetchBackendHealth();
+    if (h?.__apiConfigError) {
+      setSourceOptions([]);
+      return;
+    }
     if (!h?.features?.news) {
       setSourceOptions([]);
       return;
@@ -546,6 +641,10 @@ function NewsPage() {
       try {
         const h = await fetchBackendHealth();
         if (cancelled) return;
+        if (h?.__apiConfigError) {
+          setSourceOptions([]);
+          return;
+        }
         if (!h?.features?.news) {
           setSourceOptions([]);
           return;
@@ -574,6 +673,11 @@ function NewsPage() {
       try {
         const h = await fetchBackendHealth();
         if (!active) return;
+        if (h?.__apiConfigError) {
+          setArticles([]);
+          setError(t(`events.${h.__apiConfigError}`));
+          return;
+        }
         if (!h) {
           setArticles([]);
           setError(t("news.healthFailed"));
@@ -590,7 +694,7 @@ function NewsPage() {
         );
         if (active) setArticles(interleaveBySource(Array.isArray(data) ? data : []));
       } catch (e) {
-        if (active) setError(e.message || String(e));
+        if (active) setError(eventsFetchErrorMessage(e, t) || e.message || String(e));
       } finally {
         if (active) setLoading(false);
       }
@@ -608,6 +712,10 @@ function NewsPage() {
     setError("");
     try {
       const h = await fetchBackendHealth();
+      if (h?.__apiConfigError) {
+        setError(t(`events.${h.__apiConfigError}`));
+        return;
+      }
       if (!h) {
         setError(t("news.healthFailed"));
         return;
@@ -624,7 +732,7 @@ function NewsPage() {
       );
       setArticles(interleaveBySource(Array.isArray(list) ? list : []));
     } catch (e) {
-      setError(e.message || String(e));
+      setError(eventsFetchErrorMessage(e, t) || e.message || String(e));
     } finally {
       setRefreshing(false);
     }
@@ -655,7 +763,7 @@ function NewsPage() {
         setReaderSummary((payload?.summary || "").toString().trim());
       })
       .catch((e) => {
-        setReaderError(e.message || String(e));
+        setReaderError(eventsFetchErrorMessage(e, t) || e.message || String(e));
       })
       .finally(() => setReaderLoading(false));
   };

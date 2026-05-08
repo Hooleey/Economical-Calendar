@@ -1,5 +1,7 @@
+import logging
 import os
 from pathlib import Path
+from datetime import date as date_cls
 from typing import Generator, Optional
 
 from dotenv import load_dotenv
@@ -8,9 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from .crud import create_event, get_events, get_news_articles, get_news_article_by_id
+from .crud import (
+    count_events_on_date_by_source,
+    create_event,
+    get_events,
+    get_news_articles,
+    get_news_article_by_id,
+)
 from .alfaforex_sync import get_description_by_external_id, refresh_if_stale
-from .fred_sync import default_sync_window, sync_fred_calendar
+from .fred_sync import default_sync_window, fred_api_configured, sync_fred_calendar
 from .news_scrape import fetch_article_content, refresh_news as refresh_news_feeds
 from .database import Base, SessionLocal, engine, ensure_sqlite_columns
 from .models import Event
@@ -19,7 +27,17 @@ from .seed import seed_if_empty
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-app = FastAPI(title="Economic Events API", version="0.5.0")
+logger = logging.getLogger(__name__)
+
+
+def _heavy_startup_sync() -> bool:
+    """Long-running Alfa/news sync on startup is skipped on Render to avoid timeouts on cold boot."""
+    if (os.getenv("FORCE_STARTUP_SYNC") or "").strip().lower() in ("1", "true", "yes"):
+        return True
+    return (os.getenv("RENDER") or "").strip().lower() != "true"
+
+
+app = FastAPI(title="Economic Events API", version="0.6.0")
 
 default_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 origins_env = (os.getenv("FRONTEND_ORIGINS") or "").strip()
@@ -62,6 +80,11 @@ def _try_fred_fallback(db: Session) -> Optional[dict]:
 def startup_seed():
     with SessionLocal() as db:
         seed_if_empty(db)
+        if not _heavy_startup_sync():
+            logger.info(
+                "Skipping heavy AlfaForex/news startup (Render cold start); data loads on first GET /events or GET /news."
+            )
+            return
         try:
             refresh_if_stale(db, force=True)
         except Exception:
@@ -75,7 +98,12 @@ def startup_seed():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": app.version, "features": {"news": True}}
+    return {
+        "status": "ok",
+        "version": app.version,
+        "features": {"news": True},
+        "fred_api_configured": fred_api_configured(),
+    }
 
 
 @app.get("/api/v1/openapi.json", include_in_schema=False)
@@ -89,6 +117,7 @@ def list_events(
     country: Optional[str] = Query(default=None),
     regulator: Optional[str] = Query(default=None),
     importance: Optional[str] = Query(default=None),
+    on_date: Optional[date_cls] = Query(default=None),
     auto_refresh: bool = Query(default=True),
     db: Session = Depends(get_db),
 ):
@@ -110,6 +139,20 @@ def list_events(
     if auto_refresh and (not alfaforex_ok or not rows):
         _try_fred_fallback(db)
         rows = get_events(db, country=country, regulator=regulator, importance=importance)
+    # Exact-date UX: DB may have AlfaForex events on other days but none on ``on_date`` —
+    # backfill FRED releases for that single day (still kept separate by ``source``).
+    if auto_refresh and on_date is not None:
+        try:
+            if count_events_on_date_by_source(db, on_date, "alfaforex") == 0:
+                fred_stats = sync_fred_calendar(db, on_date, on_date)
+                rows = get_events(db, country=country, regulator=regulator, importance=importance)
+                if not fred_stats.get("fetched"):
+                    logger.warning(
+                        "FRED returned 0 release rows for %s (check API key / FRED calendar)",
+                        on_date.isoformat(),
+                    )
+        except Exception as exc:
+            logger.warning("FRED fill for exact date %s failed: %s", on_date.isoformat(), exc)
     return rows
 
 

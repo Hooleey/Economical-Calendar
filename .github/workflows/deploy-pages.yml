@@ -32,6 +32,7 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # VITE_API_BASE must be Actions variable with your HTTPS API root (Render), e.g. https://economic-api.onrender.com
       - name: Build
         working-directory: frontend
         env:

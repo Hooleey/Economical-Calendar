@@ -1,19 +1,26 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# After connect: set DATABASE_URL + FRED_API_KEY + CORS (FRONTEND_ORIGIN_REGEX / FRONTEND_ORIGINS).
 services:
   - type: web
-    name: economic-calendarr-api
+    name: economical-calendar-api
     env: python
     rootDir: backend
     plan: free
     buildCommand: pip install -r requirements.txt && python -m playwright install chromium
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --lifespan off
+    # Lifespan stays on so @app.on_event("startup") runs (seed_if_empty).
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     autoDeploy: true
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.11"
       - key: DATABASE_URL
-        # Neon / PostgreSQL connection string (paste full URL from Neon console)
+        sync: false
+      - key: FRED_API_KEY
         sync: false
       - key: FRONTEND_ORIGIN_REGEX
-        # Example: ^https://hooleey\.github\.io$
+        # Example GitHub Pages: ^https://[a-z0-9_-]+\.github\.io$
+        sync: false
+      - key: FRONTEND_ORIGINS
+        # Optional comma list, e.g. https://hooleey.github.io
         sync: false

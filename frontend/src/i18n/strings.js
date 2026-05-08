@@ -37,6 +37,16 @@ export const STRINGS = {
     "events.col.forecast": "Прогноз",
     "events.col.previous": "Предыдущее",
     "events.empty": "Нет событий за выбранный фильтр.",
+    "events.exactFredNoKey":
+      "Резервные данные FRED недоступны: на сервере не задан FRED_API_KEY (файл backend/.env локально или переменные окружения на Render). Получите бесплатный ключ на сайте FRED и перезапустите backend.",
+    "events.exactFredNoReleases":
+      "Ключ FRED виден серверу, но список пуст: для этой календарной даты у FRED могло не быть запланированных публикаций, либо внешний API временно недоступен — посмотрите лог бэкенда.",
+    "events.exactFredUnknown":
+      "Для режима «Точная дата», если событий от AlfaForex нет, бэкенд вызывает FRED (/events с on_date). Обновите backend до версии из проекта и откройте /health: должно быть fred_api_configured: true. Иначе задайте FRED_API_KEY.",
+    "events.githubPagesNoApiBase":
+      "Сайт на GitHub Pages не знает адрес API: при сборке не был задан VITE_API_BASE. В репозитории: Settings → Secrets and variables → Actions → Variables → добавьте VITE_API_BASE = https://ваш-сервис.onrender.com (без завершающего /), затем запустите workflow «Deploy frontend to GitHub Pages» заново.",
+    "events.githubPagesLocalhostApi":
+      "На GitHub Pages в сборку попал адрес localhost/127.0.0.1 — с HTTPS-страницы до него нельзя достучаться. Укажите в VITE_API_BASE публичный HTTPS URL Render (переменная репозитория) и пересоберите фронт.",
     "events.dash": "—",
     "news.title": "Экономические новости",
     "news.lede":
@@ -147,6 +157,16 @@ export const STRINGS = {
     "events.col.forecast": "Forecast",
     "events.col.previous": "Previous",
     "events.empty": "No events for current filters.",
+    "events.exactFredNoKey":
+      "FRED fallback is unavailable: FRED_API_KEY is not set on the server (backend/.env locally or Render env vars). Add a free FRED API key and restart the backend.",
+    "events.exactFredNoReleases":
+      "FRED key is configured, but the table is empty: FRED may have no releases on that calendar day or the upstream API failed—check backend logs.",
+    "events.exactFredUnknown":
+      "For Exact date, when AlfaForex has no rows that day the backend tries FRED (GET /events with on_date). Deploy the current API and open /health—expect fred_api_configured: true. Otherwise set FRED_API_KEY.",
+    "events.githubPagesNoApiBase":
+      "GitHub Pages build had no backend URL (VITE_API_BASE missing). In the repo: Settings → Secrets and variables → Actions → Variables → add VITE_API_BASE = https://your-service.onrender.com (no trailing slash), then re-run the “Deploy frontend to GitHub Pages” workflow.",
+    "events.githubPagesLocalhostApi":
+      "The shipped bundle points to localhost/127.0.0.1, which an HTTPS GitHub Pages site cannot call. Set VITE_API_BASE to your public Render HTTPS URL and rebuild the frontend.",
     "events.dash": "—",
     "news.title": "Economic news",
     "news.lede":
@@ -257,6 +277,16 @@ export const STRINGS = {
     "events.col.forecast": "预测值",
     "events.col.previous": "前值",
     "events.empty": "当前筛选无事件。",
+    "events.exactFredNoKey":
+      "无法使用 FRED 备用数据：服务器未设置 FRED_API_KEY（本地 backend/.env 或 Render 环境变量）。请在 FRED 申请免费密钥并重启后端。",
+    "events.exactFredNoReleases":
+      "FRED 密钥已配置但仍无数据：所选日期可能没有排期发布，或上游 API 故障—请查看后端日志。",
+    "events.exactFredUnknown":
+      "在「指定日期」模式下，若当日无 AlfaForex 数据，后端会调用 FRED（/events?on_date）。请部署当前 API 并访问 /health（期望 fred_api_configured: true），或设置 FRED_API_KEY。",
+    "events.githubPagesNoApiBase":
+      "GitHub Pages 构建未设置 VITE_API_BASE。请在仓库 Settings → Actions → Variables 添加 VITE_API_BASE = https://你的服务.onrender.com（无尾部 /），然后重新运行 Pages 部署工作流。",
+    "events.githubPagesLocalhostApi":
+      "打包的 API 地址为 localhost/127.0.0.1，HTTPS 的 GitHub Pages 无法访问。请将 VITE_API_BASE 设为 Render 的公网 HTTPS 地址并重新构建前端。",
     "events.dash": "—",
     "news.title": "经济要闻",
     "news.lede": "通过抓取商业与经济媒体网页生成摘要；综合来源会按经济与市场关键词过滤，尽量排除普通新闻。",
@@ -360,6 +390,16 @@ export const STRINGS = {
     "events.col.forecast": "Pronóstico",
     "events.col.previous": "Previo",
     "events.empty": "No hay eventos para el filtro actual.",
+    "events.exactFredNoKey":
+      "Copia de seguridad FRED no disponible: falta FRED_API_KEY en el servidor (backend/.env o variables en Render). Obtenga una clave gratuita en FRED y reinicie el backend.",
+    "events.exactFredNoReleases":
+      "La clave FRED está configurada pero la lista está vacía: ese día puede no haber publicaciones en el calendario FRED o falló la API externa—revise los logs del backend.",
+    "events.exactFredUnknown":
+      "Con fecha exacta, si no hay AlfaForex ese día el backend intenta FRED (GET /events con on_date). Despliegue la API actual y abra /health (fred_api_configured: true); en otro caso configure FRED_API_KEY.",
+    "events.githubPagesNoApiBase":
+      "Falta VITE_API_BASE en el build de GitHub Pages. En el repo: Settings → Actions → Variables, añada VITE_API_BASE = https://tu-servicio.onrender.com (sin barra final) y vuelva a ejecutar el workflow de despliegue.",
+    "events.githubPagesLocalhostApi":
+      "El bundle apunta a localhost/127.0.0.1; una página HTTPS en github.io no puede llamarlo. Use la URL HTTPS pública de Render en VITE_API_BASE y reconstruya el frontend.",
     "events.dash": "—",
     "news.title": "Noticias económicas",
     "news.lede":

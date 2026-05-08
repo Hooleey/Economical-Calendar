@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +25,16 @@ def get_events(
         stmt = stmt.where(models.Event.importance == importance)
 
     return db.execute(stmt).scalars().all()
+
+
+def count_events_on_date_by_source(db: Session, day: date, source: str) -> int:
+    """How many rows exist for calendar day ``day`` from a given ingest source."""
+    n = db.scalar(
+        select(func.count())
+        .select_from(models.Event)
+        .where(models.Event.date == day, models.Event.source == source)
+    )
+    return int(n or 0)
 
 
 def create_event(db: Session, event_in: schemas.EventCreate):
