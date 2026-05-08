@@ -28,6 +28,7 @@ from .seed import seed_if_empty
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = logging.getLogger(__name__)
+EXACT_FRED_FALLBACK_DAYS = 14
 
 
 def _heavy_startup_sync() -> bool:
@@ -149,11 +150,12 @@ def list_events(
                 if not fred_stats.get("fetched"):
                     near_stats = sync_fred_calendar(
                         db,
-                        on_date - timedelta(days=3),
-                        on_date + timedelta(days=3),
+                        on_date - timedelta(days=EXACT_FRED_FALLBACK_DAYS),
+                        on_date + timedelta(days=EXACT_FRED_FALLBACK_DAYS),
                     )
                     logger.info(
-                        "FRED nearest-window fallback for %s: fetched=%s inserted=%s updated=%s",
+                        "FRED nearest-window (±%s d) fallback for %s: fetched=%s inserted=%s updated=%s",
+                        EXACT_FRED_FALLBACK_DAYS,
                         on_date.isoformat(),
                         near_stats.get("fetched"),
                         near_stats.get("inserted"),

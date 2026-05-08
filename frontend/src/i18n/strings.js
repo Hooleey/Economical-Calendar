@@ -44,7 +44,7 @@ export const STRINGS = {
     "events.exactFredUnknown":
       "Для режима «Точная дата», если событий от AlfaForex нет, бэкенд вызывает FRED (/events с on_date). Обновите backend до версии из проекта и откройте /health: должно быть fred_api_configured: true. Иначе задайте FRED_API_KEY.",
     "events.exactNearestShown":
-      "За дату {requested} событий нет, показаны ближайшие доступные на {actual}.",
+      "За дату {requested} событий нет, показаны ближайшие доступные на {actual} (источник: {source}).",
     "events.githubPagesNoApiBase":
       "Сайт на GitHub Pages не знает адрес API: при сборке не был задан VITE_API_BASE. В репозитории: Settings → Secrets and variables → Actions → Variables → добавьте VITE_API_BASE = https://ваш-сервис.onrender.com (без завершающего /), затем запустите workflow «Deploy frontend to GitHub Pages» заново.",
     "events.githubPagesLocalhostApi":
@@ -173,7 +173,7 @@ export const STRINGS = {
     "events.exactFredUnknown":
       "For Exact date, when AlfaForex has no rows that day the backend tries FRED (GET /events with on_date). Deploy the current API and open /health—expect fred_api_configured: true. Otherwise set FRED_API_KEY.",
     "events.exactNearestShown":
-      "No events for {requested}; showing nearest available events on {actual}.",
+      "No events for {requested}; showing nearest available events on {actual} (source: {source}).",
     "events.githubPagesNoApiBase":
       "GitHub Pages build had no backend URL (VITE_API_BASE missing). In the repo: Settings → Secrets and variables → Actions → Variables → add VITE_API_BASE = https://your-service.onrender.com (no trailing slash), then re-run the “Deploy frontend to GitHub Pages” workflow.",
     "events.githubPagesLocalhostApi":
@@ -302,7 +302,7 @@ export const STRINGS = {
     "events.exactFredUnknown":
       "在「指定日期」模式下，若当日无 AlfaForex 数据，后端会调用 FRED（/events?on_date）。请部署当前 API 并访问 /health（期望 fred_api_configured: true），或设置 FRED_API_KEY。",
     "events.exactNearestShown":
-      "所选日期 {requested} 暂无事件，已显示最近可用日期 {actual} 的事件。",
+      "所选日期 {requested} 暂无事件，已显示最近可用日期 {actual} 的事件（来源：{source}）。",
     "events.githubPagesNoApiBase":
       "GitHub Pages 构建未设置 VITE_API_BASE。请在仓库 Settings → Actions → Variables 添加 VITE_API_BASE = https://你的服务.onrender.com（无尾部 /），然后重新运行 Pages 部署工作流。",
     "events.githubPagesLocalhostApi":
@@ -425,7 +425,7 @@ export const STRINGS = {
     "events.exactFredUnknown":
       "Con fecha exacta, si no hay AlfaForex ese día el backend intenta FRED (GET /events con on_date). Despliegue la API actual y abra /health (fred_api_configured: true); en otro caso configure FRED_API_KEY.",
     "events.exactNearestShown":
-      "No hay eventos para {requested}; se muestran los más cercanos disponibles en {actual}.",
+      "No hay eventos para {requested}; se muestran los más cercanos disponibles en {actual} (fuente: {source}).",
     "events.githubPagesNoApiBase":
       "Falta VITE_API_BASE en el build de GitHub Pages. En el repo: Settings → Actions → Variables, añada VITE_API_BASE = https://tu-servicio.onrender.com (sin barra final) y vuelva a ejecutar el workflow de despliegue.",
     "events.githubPagesLocalhostApi":

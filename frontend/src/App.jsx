@@ -617,7 +617,11 @@ function EventsPage() {
                 {showingNearestForExact ? (
                   <tr>
                     <td colSpan={10} className="muted events-exact-hint">
-                      {t("events.exactNearestShown", { requested: filters.dateExact, actual: nearestExactDateIso })}
+                      {t("events.exactNearestShown", {
+                        requested: filters.dateExact,
+                        actual: nearestExactDateIso,
+                        source: t("modal.source.fred")
+                      })}
                     </td>
                   </tr>
                 ) : null}
