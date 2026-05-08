@@ -71,6 +71,46 @@ SITES: tuple[SiteSpec, ...] = (
         include_path_keywords=("/doc/", "/rubric/3"),
         strict_economic=True,
     ),
+    SiteSpec(
+        key="vedomosti_economics",
+        label="Ведомости Экономика",
+        url="https://www.vedomosti.ru/economics",
+        host_suffix="vedomosti.ru",
+        include_path_keywords=("/economics/",),
+        strict_economic=True,
+    ),
+    SiteSpec(
+        key="tass_economics",
+        label="ТАСС Экономика",
+        url="https://tass.ru/ekonomika",
+        host_suffix="tass.ru",
+        include_path_keywords=("/ekonomika/",),
+        strict_economic=True,
+    ),
+    SiteSpec(
+        key="ria_economy",
+        label="РИА Новости Экономика",
+        url="https://ria.ru/economy/",
+        host_suffix="ria.ru",
+        include_path_keywords=("/economy/", "/20"),
+        strict_economic=True,
+    ),
+    SiteSpec(
+        key="cbr_press",
+        label="Банк России Пресс-релизы",
+        url="https://cbr.ru/press/",
+        host_suffix="cbr.ru",
+        include_path_keywords=("/press/",),
+        strict_economic=True,
+    ),
+    SiteSpec(
+        key="forbes_finance",
+        label="Forbes Россия Финансы",
+        url="https://www.forbes.ru/finansy",
+        host_suffix="forbes.ru",
+        include_path_keywords=("/finansy/",),
+        strict_economic=True,
+    ),
 )
 
 
