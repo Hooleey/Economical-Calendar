@@ -328,7 +328,8 @@ function EventsPage() {
       }
     };
     load(false, false);
-    const id = setInterval(() => load(true, true), 60000);
+    // Только GET /events; не вызываем POST /events/refresh каждую минуту (тяжёлой и затемняет отладку).
+    const id = setInterval(() => load(false, true), 60000);
     return () => {
       isActive = false;
       clearInterval(id);
