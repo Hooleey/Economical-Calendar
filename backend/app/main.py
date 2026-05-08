@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from .crud import create_event, get_events, get_news_articles, get_news_article_by_id
 from .alfaforex_sync import get_description_by_external_id, refresh_if_stale
+from .fred_sync import default_sync_window, sync_fred_calendar
 from .news_scrape import fetch_article_content, refresh_news as refresh_news_feeds
 from .database import Base, SessionLocal, engine, ensure_sqlite_columns
 from .models import Event
@@ -48,6 +49,15 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def _try_fred_fallback(db: Session) -> Optional[dict]:
+    """Fallback source for events when AlfaForex is unavailable/empty."""
+    try:
+        start_d, end_d = default_sync_window()
+        return sync_fred_calendar(db, start_d, end_d)
+    except Exception:
+        return None
+
+
 @app.on_event("startup")
 def startup_seed():
     with SessionLocal() as db:
@@ -82,19 +92,24 @@ def list_events(
     auto_refresh: bool = Query(default=True),
     db: Session = Depends(get_db),
 ):
+    alfaforex_ok = True
     if auto_refresh:
         try:
             refresh_if_stale(db)
         except Exception:
             # Keep API available even if external source is temporarily down.
-            pass
+            alfaforex_ok = False
     rows = get_events(db, country=country, regulator=regulator, importance=importance)
     if not rows and auto_refresh:
         try:
             refresh_if_stale(db, force=True)
             rows = get_events(db, country=country, regulator=regulator, importance=importance)
         except Exception:
-            pass
+            alfaforex_ok = False
+    # If AlfaForex path failed or still empty, attempt to backfill from FRED.
+    if auto_refresh and (not alfaforex_ok or not rows):
+        _try_fred_fallback(db)
+        rows = get_events(db, country=country, regulator=regulator, importance=importance)
     return rows
 
 
@@ -105,11 +120,19 @@ def add_event(payload: EventCreate, db: Session = Depends(get_db)):
 
 @app.post("/events/refresh")
 def refresh_events(db: Session = Depends(get_db)):
+    details: dict[str, object] = {}
     try:
         result = refresh_if_stale(db, force=True)
+        details["alfaforex"] = result or {"status": "ok"}
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Failed to refresh from AlfaForex HTML: {e}") from e
-    return result or {"status": "ok"}
+        details["alfaforex_error"] = str(e)
+    fred_result = _try_fred_fallback(db)
+    if fred_result:
+        details["fred"] = fred_result
+    # If both sources failed, return 502.
+    if "alfaforex" not in details and "fred" not in details:
+        raise HTTPException(status_code=502, detail=f"Failed to refresh from all sources: {details.get('alfaforex_error', 'unknown error')}")
+    return details or {"status": "ok"}
 
 
 @app.get("/news", response_model=list[NewsRead])
