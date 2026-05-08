@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from datetime import date as date_cls
+from datetime import date as date_cls, timedelta
 from typing import Generator, Optional
 
 from dotenv import load_dotenv
@@ -145,6 +145,20 @@ def list_events(
         try:
             if count_events_on_date_by_source(db, on_date, "alfaforex") == 0:
                 fred_stats = sync_fred_calendar(db, on_date, on_date)
+                # If exact day has no releases, fetch nearest days so UI can show closest available rows.
+                if not fred_stats.get("fetched"):
+                    near_stats = sync_fred_calendar(
+                        db,
+                        on_date - timedelta(days=3),
+                        on_date + timedelta(days=3),
+                    )
+                    logger.info(
+                        "FRED nearest-window fallback for %s: fetched=%s inserted=%s updated=%s",
+                        on_date.isoformat(),
+                        near_stats.get("fetched"),
+                        near_stats.get("inserted"),
+                        near_stats.get("updated"),
+                    )
                 rows = get_events(db, country=country, regulator=regulator, importance=importance)
                 if not fred_stats.get("fetched"):
                     logger.warning(

@@ -181,6 +181,13 @@ function localMidnightFromIso(isoDate) {
   return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
+function daysDiffIso(fromIso, toIso) {
+  const from = localMidnightFromIso(fromIso);
+  const to = localMidnightFromIso(toIso);
+  if (!from || !to) return null;
+  return Math.floor((to.getTime() - from.getTime()) / 86400000);
+}
+
 function nextAvailableDateIso(events, afterIso) {
   const dates = [...new Set((events || []).map((e) => calendarDayIso(e?.date)).filter(Boolean))].sort();
   const afterDay = calendarDayIso(afterIso) || afterIso;
@@ -440,6 +447,33 @@ function EventsPage() {
     return events.some((e) => calendarDayIso(e.date) === filters.dateExact);
   }, [events, filters.datePreset, filters.dateExact]);
 
+  const nearestExactDateIso = useMemo(() => {
+    if (filters.datePreset !== "exact" || !filters.dateExact || hasEventsOnExactDate) return "";
+    const uniq = [...new Set(events.map((e) => calendarDayIso(e.date)).filter(Boolean))];
+    if (!uniq.length) return "";
+    let best = "";
+    let bestAbs = Number.POSITIVE_INFINITY;
+    for (const d of uniq) {
+      const diff = daysDiffIso(filters.dateExact, d);
+      if (diff == null) continue;
+      const abs = Math.abs(diff);
+      if (abs < bestAbs || (abs === bestAbs && d > best)) {
+        best = d;
+        bestAbs = abs;
+      }
+    }
+    return best;
+  }, [events, filters.datePreset, filters.dateExact, hasEventsOnExactDate]);
+
+  const exactNearestRows = useMemo(() => {
+    if (!nearestExactDateIso) return [];
+    return events.filter((e) => calendarDayIso(e.date) === nearestExactDateIso);
+  }, [events, nearestExactDateIso]);
+
+  const showingNearestForExact =
+    filters.datePreset === "exact" && filters.dateExact && !hasEventsOnExactDate && exactNearestRows.length > 0;
+  const visibleRows = showingNearestForExact ? exactNearestRows : filtered;
+
   const ghApiBlock = apiConfigurationBlockedReason();
 
   return (
@@ -557,7 +591,7 @@ function EventsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && !loading ? (
+            {visibleRows.length === 0 && !loading ? (
               <>
                 <tr>
                   <td colSpan={10} className="muted center">
@@ -579,7 +613,15 @@ function EventsPage() {
                 ) : null}
               </>
             ) : (
-              filtered.map((e) => (
+              <>
+                {showingNearestForExact ? (
+                  <tr>
+                    <td colSpan={10} className="muted events-exact-hint">
+                      {t("events.exactNearestShown", { requested: filters.dateExact, actual: nearestExactDateIso })}
+                    </td>
+                  </tr>
+                ) : null}
+                {visibleRows.map((e) => (
                 <tr key={e.id} className="event-row" onClick={() => setSelectedEvent(e)}>
                   <td className="mono">{calendarDayIso(e.date) || e.date}</td>
                   <td className="mono">{e.event_time || t("events.dash")}</td>
@@ -598,7 +640,8 @@ function EventsPage() {
                   <td className="mono">{compactMetricValue(e.forecast) || t("events.dash")}</td>
                   <td className="mono">{compactMetricValue(e.previous) || t("events.dash")}</td>
                 </tr>
-              ))
+                ))}
+              </>
             )}
           </tbody>
         </table>
