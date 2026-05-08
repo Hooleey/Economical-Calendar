@@ -49,8 +49,7 @@ export const STRINGS = {
       "На GitHub Pages в сборку попал адрес localhost/127.0.0.1 — с HTTPS-страницы до него нельзя достучаться. Укажите в VITE_API_BASE публичный HTTPS URL Render (переменная репозитория) и пересоберите фронт.",
     "events.dash": "—",
     "news.title": "Экономические новости",
-    "news.lede":
-      "Сводка формируется парсингом страниц деловых и экономических СМИ. Для смешанных источников действует фильтр по экономическим ключевым темам, чтобы отсекать обычные новости.",
+    "news.lede": "",
     "news.source": "Источник",
     "news.onlyInterfax": "Только Интерфакс",
     "news.allSources": "Все источники",
@@ -67,7 +66,7 @@ export const STRINGS = {
     "news.readOriginal": "Читать в источнике →",
     "news.noDate": "—",
     "news.healthFailed":
-      "Не удалось связаться с API (/health). Запустите backend на порту 8000 (или проверьте прокси Vite при npm run dev).",
+      "Не удалось загрузить данные. Попробуйте позже.",
     "news.backendOutdated":
       "Подключена старая версия backend: в ответе /health нет возможности «новости» (features.news). Нужна версия API из текущего проекта.",
     "news.restartBackend":
@@ -177,8 +176,7 @@ export const STRINGS = {
       "The shipped bundle points to localhost/127.0.0.1, which an HTTPS GitHub Pages site cannot call. Set VITE_API_BASE to your public Render HTTPS URL and rebuild the frontend.",
     "events.dash": "—",
     "news.title": "Economic news",
-    "news.lede":
-      "Headlines are collected by parsing business and economic website pages. Mixed sources are filtered by economy and markets keywords to exclude general news.",
+    "news.lede": "",
     "news.source": "Source",
     "news.onlyInterfax": "Interfax only",
     "news.allSources": "All sources",
@@ -195,7 +193,7 @@ export const STRINGS = {
     "news.readOriginal": "Read original →",
     "news.noDate": "—",
     "news.healthFailed":
-      "Could not reach the API (/health). Start the backend on port 8000 (or verify the Vite dev proxy while using npm run dev).",
+      "Could not load data. Please try again later.",
     "news.backendOutdated":
       "The running backend is too old: /health does not report features.news. Use the backend from this project version.",
     "news.restartBackend":
@@ -305,7 +303,7 @@ export const STRINGS = {
       "打包的 API 地址为 localhost/127.0.0.1，HTTPS 的 GitHub Pages 无法访问。请将 VITE_API_BASE 设为 Render 的公网 HTTPS 地址并重新构建前端。",
     "events.dash": "—",
     "news.title": "经济要闻",
-    "news.lede": "通过抓取商业与经济媒体网页生成摘要；综合来源会按经济与市场关键词过滤，尽量排除普通新闻。",
+    "news.lede": "",
     "news.source": "来源",
     "news.onlyInterfax": "仅国际文传电讯社",
     "news.allSources": "全部来源",
@@ -316,7 +314,7 @@ export const STRINGS = {
     "news.readOriginal": "阅读原文 →",
     "news.noDate": "—",
     "news.healthFailed":
-      "无法访问 API（/health）。请在 8000 端口启动后端（使用 npm run dev 时确认 Vite 代理）。",
+      "暂时无法加载数据，请稍后再试。",
     "news.backendOutdated":
       "后端版本过旧：/health 未返回 features.news。请使用本仓库当前版本的后端。",
     "news.restartBackend":
@@ -426,8 +424,7 @@ export const STRINGS = {
       "El bundle apunta a localhost/127.0.0.1; una página HTTPS en github.io no puede llamarlo. Use la URL HTTPS pública de Render en VITE_API_BASE y reconstruya el frontend.",
     "events.dash": "—",
     "news.title": "Noticias económicas",
-    "news.lede":
-      "Los titulares se obtienen parseando páginas web de medios económicos y financieros. Las fuentes mixtas pasan por filtros de economía y mercados para excluir noticias generales.",
+    "news.lede": "",
     "news.source": "Fuente",
     "news.onlyInterfax": "Solo Interfax",
     "news.allSources": "Todas las fuentes",
@@ -438,7 +435,7 @@ export const STRINGS = {
     "news.readOriginal": "Leer en la fuente →",
     "news.noDate": "—",
     "news.healthFailed":
-      "No se pudo contactar al API (/health). Inicie el backend en el puerto 8000 (o verifique el proxy de Vite con npm run dev).",
+      "No se pudieron cargar los datos. Inténtalo de nuevo más tarde.",
     "news.backendOutdated":
       "El backend en ejecución es antiguo: /health no incluye features.news. Use el backend de esta versión del proyecto.",
     "news.restartBackend":
