@@ -40,7 +40,7 @@ export const STRINGS = {
     "events.exactFredNoKey":
       "Резервные данные FRED недоступны: на сервере не задан FRED_API_KEY (файл backend/.env локально или переменные окружения на Render). Получите бесплатный ключ на сайте FRED и перезапустите backend.",
     "events.exactFredNoReleases":
-      "Ключ FRED виден серверу, но список пуст: для этой календарной даты у FRED могло не быть запланированных публикаций, либо внешний API временно недоступен — посмотрите лог бэкенда.",
+      "За выбранную дату пока нет доступных событий.",
     "events.exactFredUnknown":
       "Для режима «Точная дата», если по основному календарю событий нет, бэкенд вызывает FRED (/events с on_date). Обновите backend до версии из проекта и откройте /health: должно быть fred_api_configured: true. Иначе задайте FRED_API_KEY.",
     "events.exactNearestShown":
@@ -170,7 +170,7 @@ export const STRINGS = {
     "events.exactFredNoKey":
       "FRED fallback is unavailable: FRED_API_KEY is not set on the server (backend/.env locally or Render env vars). Add a free FRED API key and restart the backend.",
     "events.exactFredNoReleases":
-      "FRED key is configured, but the table is empty: FRED may have no releases on that calendar day or the upstream API failed—check backend logs.",
+      "There are no available events for the selected date yet.",
     "events.exactFredUnknown":
       "For Exact date, when the primary calendar has no rows that day the backend tries FRED (GET /events with on_date). Deploy the current API and open /health—expect fred_api_configured: true. Otherwise set FRED_API_KEY.",
     "events.exactNearestShown":
@@ -300,7 +300,7 @@ export const STRINGS = {
     "events.exactFredNoKey":
       "无法使用 FRED 备用数据：服务器未设置 FRED_API_KEY（本地 backend/.env 或 Render 环境变量）。请在 FRED 申请免费密钥并重启后端。",
     "events.exactFredNoReleases":
-      "FRED 密钥已配置但仍无数据：所选日期可能没有排期发布，或上游 API 故障—请查看后端日志。",
+      "所选日期暂时没有可用事件。",
     "events.exactFredUnknown":
       "在「指定日期」模式下，若当日主日历无数据，后端会调用 FRED（/events?on_date）。请部署当前 API 并访问 /health（期望 fred_api_configured: true），或设置 FRED_API_KEY。",
     "events.exactNearestShown":
@@ -424,7 +424,7 @@ export const STRINGS = {
     "events.exactFredNoKey":
       "Copia de seguridad FRED no disponible: falta FRED_API_KEY en el servidor (backend/.env o variables en Render). Obtenga una clave gratuita en FRED y reinicie el backend.",
     "events.exactFredNoReleases":
-      "La clave FRED está configurada pero la lista está vacía: ese día puede no haber publicaciones en el calendario FRED o falló la API externa—revise los logs del backend.",
+      "Aún no hay eventos disponibles para la fecha seleccionada.",
     "events.exactFredUnknown":
       "Con fecha exacta, si el calendario principal no tiene filas ese día el backend intenta FRED (GET /events con on_date). Despliegue la API actual y abra /health (fred_api_configured: true); en otro caso configure FRED_API_KEY.",
     "events.exactNearestShown":

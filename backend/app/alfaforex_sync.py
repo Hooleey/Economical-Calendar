@@ -5,8 +5,9 @@ import json
 import urllib.request
 from urllib.parse import urlsplit, quote
 from html import unescape
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from playwright.sync_api import sync_playwright
 from sqlalchemy.orm import Session
@@ -17,6 +18,12 @@ ALFAFOREX_PAGE_URL = (os.getenv("ALFAFOREX_PAGE_URL") or "https://alfaforex.ru/e
 ALFAFOREX_TTL_SECONDS = int(os.getenv("ALFAFOREX_SYNC_TTL_SECONDS") or "300")
 ALFAFOREX_CULTURE = os.getenv("ALFAFOREX_CULTURE") or "ru-RU"
 ALFAFOREX_TIMEZONE = os.getenv("ALFAFOREX_TIMEZONE") or "Arabic Standard Time"
+# Same default list as the AlfaForex calendar page (must include CN etc. or many rows never appear in JSON).
+ALFAFOREX_COUNTRYCODE = os.getenv("ALFAFOREX_COUNTRYCODE") or (
+    "AU,UK,DE,EMU,ES,IT,CA,CN,MX,NZ,RU,US,TR,FR,CH,ZA,JP"
+)
+# Wall-clock for DateTime from the API matches the requested calendar timeZone; map to IANA for countdown.
+ALFAFOREX_IANA_TIMEZONE = os.getenv("ALFAFOREX_IANA_TIMEZONE") or "Asia/Riyadh"
 
 _last_sync_epoch: float = 0.0
 _desc_cache: dict[str, tuple[float, dict[str, str]]] = {}
@@ -79,16 +86,46 @@ def _clean_html_description(raw_html: str) -> Optional[str]:
     return text or None
 
 
-def _alfaforex_api_endpoint(*, include_countrycode: bool, culture: Optional[str] = None) -> str:
+def _compute_remaining_time(item: dict[str, Any]) -> Optional[str]:
+    """
+    JSON feed has no countdown field; derive it from DateTime (wall clock in ALFAFOREX_TIMEZONE).
+    """
+    if bool(item.get("AllDay")):
+        return None
+    dt = item.get("DateTime") or {}
+    date_s = str(dt.get("Date") or "").strip()
+    if len(date_s) < 19:
+        return None
+    try:
+        naive = datetime.fromisoformat(date_s[:19])
+        tz = ZoneInfo(ALFAFOREX_IANA_TIMEZONE)
+        ev = naive.replace(tzinfo=tz)
+        sec = int((ev - datetime.now(tz)).total_seconds())
+        if sec <= 0:
+            return None
+        d, r = divmod(sec, 86400)
+        h, r = divmod(r, 3600)
+        m, s = divmod(r, 60)
+        if d:
+            return f"{d}d {h}h {m}m"
+        if h:
+            return f"{h}h {m}m"
+        if m:
+            return f"{m}m {s}s" if s else f"{m}m"
+        return f"{s}s" if s else "<1m"
+    except Exception:
+        return None
+
+
+def _alfaforex_api_endpoint(*, include_countrycode: bool = True, culture: Optional[str] = None) -> str:
     parts = urlsplit(ALFAFOREX_PAGE_URL)
     site_root = f"{parts.scheme}://{parts.netloc}"
     culture = quote(culture or ALFAFOREX_CULTURE, safe="")
     tz = quote(ALFAFOREX_TIMEZONE, safe="")
     endpoint = f"{site_root}/api/economic-calendar/?action=events&culture={culture}&timeZone={tz}"
     if include_countrycode:
-        endpoint += (
-            "&countrycode=AU%2CUK%2CDE%2CEMU%2CES%2CIT%2CCA%2CCN%2CMX%2CNZ%2CRU%2CUS%2CTR%2CFR%2CCH%2CZA%2CJP"
-        )
+        cc = quote(ALFAFOREX_COUNTRYCODE, safe=",")
+        endpoint += f"&countrycode={cc}"
     return endpoint
 
 
@@ -96,7 +133,7 @@ def _fetch_events_payload(*, culture: Optional[str] = None) -> list[dict[str, An
     """
     Prefer the site's JSON API: it contains far more events than the rendered table.
     """
-    endpoint = _alfaforex_api_endpoint(include_countrycode=False, culture=culture)
+    endpoint = _alfaforex_api_endpoint(include_countrycode=True, culture=culture)
     with urllib.request.urlopen(endpoint, timeout=30) as resp:
         payload = json.loads(resp.read().decode("utf-8", "ignore"))
     if not isinstance(payload, list):
@@ -144,9 +181,9 @@ def _fetch_rendered_rows() -> list[dict[str, Any]]:
                 # networkidle is too strict for this page and often times out
                 page.goto(ALFAFOREX_PAGE_URL, wait_until="domcontentloaded", timeout=60000)
                 page.wait_for_selector(".trading-table__body tr", timeout=60000)
+                tz_for_req = ALFAFOREX_TIMEZONE.replace(" ", "+")
                 rows = page.evaluate(
-            """
-            () => {
+                    """({ timeZone, countrycode, culture }) => {
               const tbody = document.querySelector(".trading-table__body");
               if (!tbody) return [];
               const result = [];
@@ -155,9 +192,9 @@ def _fetch_rendered_rows() -> list[dict[str, Any]]:
               try {
                 const params = new URLSearchParams({
                   action: "events",
-                  culture: "ru-RU",
-                  timeZone: "Arabic+Standard+Time",
-                  countrycode: "AU,UK,DE,EMU,ES,IT,CA,CN,MX,NZ,RU,US,TR,FR,CH,ZA,JP"
+                  culture,
+                  timeZone,
+                  countrycode
                 });
                 const url = `/api/economic-calendar/?${params.toString()}`;
                 // description exists only in the events payload (HTMLDescription)
@@ -211,8 +248,12 @@ def _fetch_rendered_rows() -> list[dict[str, Any]]:
                 });
               }
               return result;
-            }
-            """
+            }""",
+                    {
+                        "timeZone": tz_for_req,
+                        "countrycode": ALFAFOREX_COUNTRYCODE,
+                        "culture": ALFAFOREX_CULTURE,
+                    },
                 )
                 browser.close()
                 return rows
@@ -283,7 +324,7 @@ def sync_alfaforex_events(db: Session) -> dict[str, int]:
                 title=title,
                 event_date=day,
                 event_time=ev_time,
-                remaining_time=None,
+                remaining_time=_compute_remaining_time(item),
                 currency=currency,
                 actual=actual,
                 forecast=forecast,
