@@ -123,12 +123,13 @@ def list_events(
     db: Session = Depends(get_db),
 ):
     alfaforex_ok = True
-    if auto_refresh:
-        try:
-            refresh_if_stale(db)
-        except Exception:
-            # Keep API available even if external source is temporarily down.
-            alfaforex_ok = False
+    # Always run TTL-gated Alfa sync: ``refresh_if_stale`` no-ops until TTL expires, so this stays cheap.
+    # The SPA polls GET /events with auto_refresh=false; without this path the DB never picks up new Actual/Forecast.
+    try:
+        refresh_if_stale(db)
+    except Exception:
+        # Keep API available even if external source is temporarily down.
+        alfaforex_ok = False
     rows = get_events(db, country=country, regulator=regulator, importance=importance)
     if not rows and auto_refresh:
         try:

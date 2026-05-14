@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from . import crud
 
 ALFAFOREX_PAGE_URL = (os.getenv("ALFAFOREX_PAGE_URL") or "https://alfaforex.ru/economic-calendar/").rstrip("/")
-ALFAFOREX_TTL_SECONDS = int(os.getenv("ALFAFOREX_SYNC_TTL_SECONDS") or "300")
+ALFAFOREX_TTL_SECONDS = int(os.getenv("ALFAFOREX_SYNC_TTL_SECONDS") or "120")
 ALFAFOREX_CULTURE = os.getenv("ALFAFOREX_CULTURE") or "ru-RU"
 ALFAFOREX_TIMEZONE = os.getenv("ALFAFOREX_TIMEZONE") or "Arabic Standard Time"
 # Same default list as the AlfaForex calendar page (must include CN etc. or many rows never appear in JSON).
