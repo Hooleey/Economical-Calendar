@@ -357,7 +357,6 @@ function EventsPage() {
       // При смене даты / первом открытии «Точная» — один раз auto_refresh+FRED; опрос раз в минуту — лёгкий GET без sync.
       const fetchOpts =
         onDatePick && !periodic ? { autoRefresh: true, onDate: onDatePick } : { autoRefresh: false };
-
       const cfgEarly = apiConfigurationBlockedReason();
       if (cfgEarly) {
         if (isActive) {
