@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from .crud import (
-    count_events_on_date,
+    count_events_on_date_by_source,
     create_event,
     get_events,
     get_news_articles,
@@ -145,7 +145,7 @@ def list_events(
     # backfill FRED releases for that single day (still kept separate by ``source``).
     if auto_refresh and on_date is not None:
         try:
-            if count_events_on_date(db, on_date) == 0:
+            if count_events_on_date_by_source(db, on_date, "alfaforex") == 0:
                 fred_stats = sync_fred_calendar(db, on_date, on_date)
                 # If exact day has no releases, fetch nearest days so UI can show closest available rows.
                 if not fred_stats.get("fetched"):

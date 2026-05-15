@@ -37,14 +37,6 @@ def count_events_on_date_by_source(db: Session, day: date, source: str) -> int:
     return int(n or 0)
 
 
-def count_events_on_date(db: Session, day: date) -> int:
-    """How many rows exist for calendar day ``day`` (any source)."""
-    n = db.scalar(
-        select(func.count()).select_from(models.Event).where(models.Event.date == day)
-    )
-    return int(n or 0)
-
-
 def create_event(db: Session, event_in: schemas.EventCreate):
     data = event_in.model_dump()
     event = models.Event(
@@ -148,11 +140,6 @@ def upsert_external_event(
             db.rollback()
             return "skipped"
 
-    # Do not wipe published metrics when the feed omits fields between polls.
-    preserve_if_none = frozenset(
-        {"actual", "forecast", "previous", "description", "currency", "event_time"}
-    )
-
     changed = False
     for attr, value in (
         ("title", title),
@@ -169,8 +156,6 @@ def upsert_external_event(
         ("description", description),
         ("source", source),
     ):
-        if attr in preserve_if_none and value is None:
-            continue
         if getattr(existing, attr) != value:
             setattr(existing, attr, value)
             changed = True

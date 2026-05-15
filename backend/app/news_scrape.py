@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from . import crud
 
-NEWS_SYNC_TTL_SECONDS = int(os.getenv("NEWS_SYNC_TTL_SECONDS") or "300")
+NEWS_SYNC_TTL_SECONDS = int(os.getenv("NEWS_SYNC_TTL_SECONDS") or "900")
 LAST_NEWS_REFRESH: float = 0.0
 
 USER_AGENT = (
