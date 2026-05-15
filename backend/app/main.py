@@ -127,8 +127,9 @@ def list_events(
     # The SPA polls GET /events with auto_refresh=false; without this path the DB never picks up new Actual/Forecast.
     try:
         refresh_if_stale(db)
-    except Exception:
+    except Exception as exc:
         # Keep API available even if external source is temporarily down.
+        logger.warning("AlfaForex refresh on GET /events failed: %s", exc)
         alfaforex_ok = False
     rows = get_events(db, country=country, regulator=regulator, importance=importance)
     if not rows and auto_refresh:
