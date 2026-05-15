@@ -354,16 +354,16 @@ function EventsPage() {
         .sort((a, b) => a.label.localeCompare(b.label)),
     [events, t]
   );
-  // Один поток загрузки: при «Точная дата» первый запрос после смены даты шлёт on_date + auto_refresh (FRED).
-  // Минутный опрос — только events?auto_refresh=false (данные уже в БД после первого запроса).
+  // Первый запрос после смены фильтра — auto_refresh (синк + FRED для точной даты).
+  // Периодический опрос — лёгкий GET; TTL-синк на бэкенде всё равно обновляет Actual/Forecast.
   useEffect(() => {
     let isActive = true;
     const load = async (refreshFirst = false, periodic = false) => {
       const gen = ++eventsFetchGen.current;
       const onDatePick = filters.datePreset === "exact" && filters.dateExact ? filters.dateExact : undefined;
-      // При смене даты / первом открытии «Точная» — один раз auto_refresh+FRED; опрос раз в минуту — лёгкий GET без sync.
-      const fetchOpts =
-        onDatePick && !periodic ? { autoRefresh: true, onDate: onDatePick } : { autoRefresh: false };
+      const fetchOpts = periodic
+        ? { autoRefresh: false, ...(onDatePick ? { onDate: onDatePick } : {}) }
+        : { autoRefresh: true, ...(onDatePick ? { onDate: onDatePick } : {}) };
       const cfgEarly = apiConfigurationBlockedReason();
       if (cfgEarly) {
         if (isActive) {
@@ -401,8 +401,7 @@ function EventsPage() {
       }
     };
     load(false, false);
-    // Только GET /events; не вызываем POST /events/refresh каждую минуту (тяжёлой и затемняет отладку).
-    const id = setInterval(() => load(false, true), 60000);
+    const id = setInterval(() => load(false, true), 45000);
     return () => {
       isActive = false;
       clearInterval(id);
@@ -761,7 +760,7 @@ function NewsPage() {
 
   useEffect(() => {
     let active = true;
-    const load = async (opts = {}) => {
+    const load = async () => {
       setLoading(true);
       setError("");
       try {
@@ -784,7 +783,7 @@ function NewsPage() {
         }
         const data = await fetchNews(
           { source: interfaxOnly ? "interfax_business" : source || undefined },
-          { autoRefresh: false, limit: 150 }
+          { autoRefresh: true, limit: 200 }
         );
         if (active) setArticles(interleaveBySource(Array.isArray(data) ? data : []));
       } catch (e) {
@@ -793,8 +792,8 @@ function NewsPage() {
         if (active) setLoading(false);
       }
     };
-    load({ autoRefresh: false });
-    const id = setInterval(() => load({ autoRefresh: false }), 120000);
+    load();
+    const id = setInterval(load, 120000);
     return () => {
       active = false;
       clearInterval(id);
@@ -822,7 +821,7 @@ function NewsPage() {
       await populateSourceCatalog();
       const list = await fetchNews(
         { source: interfaxOnly ? "interfax_business" : source || undefined },
-        { autoRefresh: false, limit: 150 }
+        { autoRefresh: true, limit: 200 }
       );
       setArticles(interleaveBySource(Array.isArray(list) ? list : []));
     } catch (e) {

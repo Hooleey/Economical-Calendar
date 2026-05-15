@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from . import crud
 
 ALFAFOREX_PAGE_URL = (os.getenv("ALFAFOREX_PAGE_URL") or "https://alfaforex.ru/economic-calendar/").rstrip("/")
-ALFAFOREX_TTL_SECONDS = int(os.getenv("ALFAFOREX_SYNC_TTL_SECONDS") or "120")
+ALFAFOREX_TTL_SECONDS = int(os.getenv("ALFAFOREX_SYNC_TTL_SECONDS") or "60")
 ALFAFOREX_CULTURE = os.getenv("ALFAFOREX_CULTURE") or "ru-RU"
 ALFAFOREX_TIMEZONE = os.getenv("ALFAFOREX_TIMEZONE") or "Arabic Standard Time"
 # Same default list as the AlfaForex calendar page (must include CN etc. or many rows never appear in JSON).
@@ -132,13 +132,32 @@ def _alfaforex_api_endpoint(*, include_countrycode: bool = True, culture: Option
 def _fetch_events_payload(*, culture: Optional[str] = None) -> list[dict[str, Any]]:
     """
     Prefer the site's JSON API: it contains far more events than the rendered table.
+    Merges filtered and unfiltered responses so country-scoped gaps are filled.
     """
-    endpoint = _alfaforex_api_endpoint(include_countrycode=True, culture=culture)
-    with urllib.request.urlopen(endpoint, timeout=30) as resp:
-        payload = json.loads(resp.read().decode("utf-8", "ignore"))
-    if not isinstance(payload, list):
-        return []
-    return payload
+    merged: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def _load(include_countrycode: bool) -> None:
+        endpoint = _alfaforex_api_endpoint(
+            include_countrycode=include_countrycode, culture=culture
+        )
+        with urllib.request.urlopen(endpoint, timeout=30) as resp:
+            payload = json.loads(resp.read().decode("utf-8", "ignore"))
+        if not isinstance(payload, list):
+            return
+        for item in payload:
+            event_id = str(item.get("IdEcoCalendar") or "").strip()
+            if not event_id or event_id in seen:
+                continue
+            seen.add(event_id)
+            merged.append(item)
+
+    for with_cc in (True, False):
+        try:
+            _load(with_cc)
+        except Exception:
+            continue
+    return merged
 
 
 def _fetch_descriptions_map(*, culture: Optional[str] = None) -> dict[str, str]:
